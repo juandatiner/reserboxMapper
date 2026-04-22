@@ -262,52 +262,98 @@ function refreshCategoryFilter() {
   }
 }
 
-function buildListItem(b) {
+function buildListItem(b, opts = {}) {
   const li = document.createElement('li');
   const hasPhoneLocal = !!(b.formatted_phone_number || b.international_phone_number);
   const fullyDone = b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId;
   const noPhoneDone = fullyDone && !hasPhoneLocal;
+  const isDup = state._dupIds && state._dupIds.has(b.place_id);
   if (b.notionPageId) li.classList.add('notion-done');
   if (b.reviewStatus === 'approved') li.classList.add('approved-item');
   if (fullyDone && hasPhoneLocal) li.classList.add('done-item');
   if (noPhoneDone) li.classList.add('nophone-item');
+  if (isDup) li.classList.add('dup-item');
   const badge = noPhoneDone
     ? '<span style="color:#fbbf24">⚠</span> '
     : (fullyDone ? '<span style="color:#38bdf8">📨</span> ' : (b.reviewStatus === 'approved' ? '<span style="color:#4ade80">✓</span> ' : ''));
-  if (b._isDup) li.classList.add('dup-item');
+  const phoneShown = b.formatted_phone_number || b.international_phone_number;
   li.innerHTML = `
     <div class="bname">${badge}${escapeHtml(b.name)}</div>
+    <div>${statusPill(b)}${isDup ? ' <span class="pill dup">🔀 Posible duplicado</span>' : ''}</div>
     <div class="bmeta">${escapeHtml(b.category)} · ${escapeHtml(b.localidad || '')}</div>
-    <div class="bmeta">⭐ ${b.rating ?? '-'} (${b.user_ratings_total || 0}) ${b.formatted_phone_number ? '· 📞 ' + escapeHtml(b.formatted_phone_number) : ''}</div>
+    <div class="bmeta">⭐ ${b.rating ?? '-'} (${b.user_ratings_total || 0}) ${phoneShown ? '· 📞 ' + escapeHtml(phoneShown) : '· <span style="color:#fbbf24">sin teléfono</span>'}</div>
+    ${b.formatted_address ? `<div class="bmeta">📍 ${escapeHtml(b.formatted_address)}</div>` : ''}
     <div class="bactions">
       <a href="${b.url}" target="_blank">Maps</a>
       ${b.website ? `<a href="${b.website}" target="_blank">Web</a>` : ''}
       <button data-focus="${b.place_id}">Ver</button>
+      ${opts.quickAcceptDup ? `<button class="quick-ok" data-accept-dup="${b.place_id}" title="Aceptar: no es duplicado">✓</button>` : ''}
+      ${opts.quickDelete ? `<button class="quick-del" data-del="${b.place_id}" title="Eliminar rápido">✗</button>` : ''}
     </div>
   `;
   return li;
 }
 
-function findDuplicateIds(list) {
-  const groups = { name: {}, addr: {}, phone: {} };
+function findDuplicateGroups(list) {
+  const parent = {};
+  const find = x => parent[x] === x ? x : (parent[x] = find(parent[x]));
+  const union = (a, b) => { const ra = find(a), rb = find(b); if (ra !== rb) parent[ra] = rb; };
+  for (const b of list) parent[b.place_id] = b.place_id;
+
+  const keyIdx = { name: {}, addr: {}, phone: {} };
   for (const b of list) {
+    if (b.notDuplicate) continue;
     const n = (b.name || '').toLowerCase().trim();
     const a = (b.formatted_address || '').toLowerCase().replace(/[^a-z0-9]/g, '').trim();
     const p = (b.formatted_phone_number || b.international_phone_number || '').replace(/\D/g, '');
-    if (n) (groups.name[n] = groups.name[n] || []).push(b.place_id);
-    if (a.length > 6) (groups.addr[a] = groups.addr[a] || []).push(b.place_id);
-    if (p.length >= 7) (groups.phone[p] = groups.phone[p] || []).push(b.place_id);
+    if (n) (keyIdx.name[n] = keyIdx.name[n] || []).push(b.place_id);
+    if (a.length > 6) (keyIdx.addr[a] = keyIdx.addr[a] || []).push(b.place_id);
+    if (p.length >= 7) (keyIdx.phone[p] = keyIdx.phone[p] || []).push(b.place_id);
   }
-  const dup = new Set();
+
+  const reasons = {}; // placeId -> { name: Set, addr: Set, phone: Set }
   for (const k of ['name', 'addr', 'phone']) {
-    for (const arr of Object.values(groups[k])) {
-      if (arr.length > 1) arr.forEach(id => dup.add(id));
+    for (const [val, ids] of Object.entries(keyIdx[k])) {
+      if (ids.length > 1) {
+        for (let i = 1; i < ids.length; i++) union(ids[0], ids[i]);
+        for (const id of ids) {
+          (reasons[id] = reasons[id] || { name: new Set(), addr: new Set(), phone: new Set() })[k].add(val);
+        }
+      }
     }
   }
-  return dup;
+
+  const byRoot = {};
+  for (const id of Object.keys(reasons)) {
+    const r = find(id);
+    (byRoot[r] = byRoot[r] || []).push(id);
+  }
+  return { groups: Object.values(byRoot), reasons };
 }
 
-function renderSection(ul, key, title, items, headerClass) {
+function groupReasonsLabel(ids, reasons) {
+  const types = new Set();
+  for (const id of ids) {
+    const r = reasons[id];
+    if (!r) continue;
+    if (r.name.size) types.add('nombre');
+    if (r.addr.size) types.add('dirección');
+    if (r.phone.size) types.add('teléfono');
+  }
+  return Array.from(types).join(' · ') || 'coincidencia';
+}
+
+function statusPill(b) {
+  const hasPhone = !!(b.formatted_phone_number || b.international_phone_number);
+  if (b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId && hasPhone) return '<span class="pill done">📨 En Notion con teléfono</span>';
+  if (b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId) return '<span class="pill nophone">⚠ En Notion SIN teléfono</span>';
+  if (b.reviewStatus === 'approved' && b.detailsFetched && !hasPhone) return '<span class="pill nophone">⚠ Sin teléfono · NO enviado a Notion</span>';
+  if (b.reviewStatus === 'approved' && b.notionPageId) return '<span class="pill approved">✓ Verificado · en Notion (falta traer detalles)</span>';
+  if (b.reviewStatus === 'approved') return '<span class="pill approved">✓ Verificado · falta enviar a Notion</span>';
+  return '<span class="pill pending">○ Sin verificar</span>';
+}
+
+function renderSection(ul, key, title, items, headerClass, opts = {}) {
   if (!items.length) return;
   const collapsed = !!state.sectionsCollapsed[key];
   const h = document.createElement('li');
@@ -316,27 +362,53 @@ function renderSection(ul, key, title, items, headerClass) {
   h.addEventListener('click', () => toggleSection(key));
   ul.appendChild(h);
   if (!collapsed) {
-    for (const b of items.slice(0, 300)) ul.appendChild(buildListItem(b));
+    for (const b of items.slice(0, 300)) ul.appendChild(buildListItem(b, opts));
   }
 }
 
 function refreshList() {
   const list = filteredBusinesses().sort((a, b) => (b.user_ratings_total || 0) - (a.user_ratings_total || 0));
   const hasPhone = b => !!(b.formatted_phone_number || b.international_phone_number);
-  const dupIds = findDuplicateIds(list);
-  const dups = list.filter(b => dupIds.has(b.place_id));
-  const rest = list.filter(b => !dupIds.has(b.place_id));
-  const approvedPartial = rest.filter(b => b.reviewStatus === 'approved' && !(b.detailsFetched && b.notionPageId));
-  const noPhone = rest.filter(b => b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId && !hasPhone(b));
-  const done = rest.filter(b => b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId && hasPhone(b));
-  const pending = rest.filter(b => b.reviewStatus !== 'approved');
+  const { groups: dupGroups, reasons: dupReasons } = findDuplicateGroups(list);
+  const dupIds = new Set();
+  dupGroups.forEach(g => g.forEach(id => dupIds.add(id)));
+  state._dupIds = dupIds;
+  // Sections computed over FULL list — items duplicados también aparecen en su sección semántica.
+  const noPhone = list.filter(b => b.reviewStatus === 'approved' && b.detailsFetched && !hasPhone(b));
+  const approvedPartial = list.filter(b => b.reviewStatus === 'approved' && !(b.detailsFetched && b.notionPageId) && !(b.detailsFetched && !hasPhone(b)));
+  const done = list.filter(b => b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId && hasPhone(b));
+  const pending = list.filter(b => b.reviewStatus !== 'approved');
   const ul = document.getElementById('business-list');
   ul.innerHTML = '';
-  renderSection(ul, 'dup', `🔀 Posibles duplicados — mismo nombre/dirección/teléfono (${dups.length})`, dups, 'dup');
-  renderSection(ul, 'approvedPartial', `✓ Aprobados sin Notion (${approvedPartial.length})`, approvedPartial, 'approved');
-  renderSection(ul, 'noPhone', `⚠ Segunda revisión — sin teléfono (${noPhone.length})`, noPhone, 'nophone');
-  renderSection(ul, 'done', `✅ Verificados en Notion con contacto (${done.length})`, done, 'done');
-  renderSection(ul, 'pending', `Sin verificar (${pending.length})`, pending, '');
+
+  if (dupGroups.length) {
+    const collapsed = !!state.sectionsCollapsed['dup'];
+    const h = document.createElement('li');
+    h.className = 'list-section-header dup';
+    h.innerHTML = `<span class="caret">${collapsed ? '▸' : '▾'}</span> 🔀 Posibles duplicados — ${dupGroups.length} grupos · ${dupIds.size} locales`;
+    h.addEventListener('click', () => toggleSection('dup'));
+    ul.appendChild(h);
+    if (!collapsed) {
+      dupGroups.forEach((ids, idx) => {
+        const gh = document.createElement('li');
+        gh.className = 'dup-group-header';
+        gh.innerHTML = `
+          <div class="dup-group-meta"><b>Grupo ${idx + 1}</b> · ${ids.length} locales · coincide por <i>${groupReasonsLabel(ids, dupReasons)}</i></div>
+          <button class="quick-ok dup-group-accept" data-accept-group="${ids.join(',')}" title="Aceptar grupo: no son duplicados">✓ Aceptar grupo</button>
+        `;
+        ul.appendChild(gh);
+        for (const id of ids) {
+          const b = state.businesses[id];
+          if (b) ul.appendChild(buildListItem(b, { quickDelete: true }));
+        }
+      });
+    }
+  }
+
+  renderSection(ul, 'approvedPartial', `✓ Verificados — falta enviar a Notion/traer contacto (${approvedPartial.length})`, approvedPartial, 'approved');
+  renderSection(ul, 'noPhone', `⚠ Segunda verificación — sin teléfono (no enviados a Notion) (${noPhone.length})`, noPhone, 'nophone', { quickDelete: true });
+  renderSection(ul, 'done', `✅ Listos — verificados + en Notion + con teléfono (${done.length})`, done, 'done');
+  renderSection(ul, 'pending', `○ Sin verificar (${pending.length})`, pending, '');
   const all = Object.values(state.businesses);
   document.getElementById('count-total').textContent = all.length;
   document.getElementById('count-approved').textContent = all.filter(b => b.reviewStatus === 'approved').length;
@@ -577,6 +649,16 @@ Costo: $${cost}`;
 
   document.getElementById('business-list').addEventListener('click', async e => {
     const t = e.target;
+    if (t.dataset.del) {
+      e.stopPropagation();
+      await quickReject(t.dataset.del);
+      return;
+    }
+    if (t.dataset.acceptGroup) {
+      e.stopPropagation();
+      await acceptDuplicateGroup(t.dataset.acceptGroup.split(','));
+      return;
+    }
     if (t.dataset.focus) {
       const b = state.businesses[t.dataset.focus];
       if (b && b.lat && b.lng) {
@@ -605,6 +687,31 @@ window.approveOne = async placeId => {
   refreshList();
   toast('✓ Aprobado', 'ok', 1500);
 };
+
+async function quickReject(placeId) {
+  await fetch(`/api/business/${placeId}`, { method: 'DELETE' });
+  if (state.markers[placeId]) { map.removeLayer(state.markers[placeId]); delete state.markers[placeId]; }
+  delete state.businesses[placeId];
+  refreshList();
+  refreshBlacklist();
+  toast('✗ Eliminado', 'ok', 1200);
+}
+
+async function acceptDuplicateGroup(placeIds) {
+  const r = await fetch('/api/business/accept-duplicates-bulk', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ placeIds })
+  });
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    return toast(j.error || `Error ${r.status} (¿reiniciaste server?)`, 'err', 4000);
+  }
+  for (const id of placeIds) {
+    if (state.businesses[id]) state.businesses[id].notDuplicate = true;
+  }
+  refreshList();
+  toast(`✓ Grupo aceptado (${placeIds.length} locales)`, 'ok', 1800);
+}
 
 window.rejectOne = async placeId => {
   if (!(await confirmDialog('Esto borra del cache, archiva la página en Notion si existe, y agrega el place_id a la blacklist para no volver a traerlo.', { title: 'Eliminar local', okText: 'Eliminar', danger: true }))) return;

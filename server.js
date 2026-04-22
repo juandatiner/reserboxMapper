@@ -716,6 +716,30 @@ app.post('/api/business/:placeId/approve', async (req, res) => {
   res.json({ ok: true });
 });
 
+app.post('/api/business/:placeId/accept-duplicate', async (req, res) => {
+  const b = businesses[req.params.placeId];
+  if (!b) return res.status(404).json({ error: 'No existe' });
+  b.notDuplicate = true;
+  await saveBusinesses();
+  broadcast({ type: 'business', business: b });
+  res.json({ ok: true });
+});
+
+app.post('/api/business/accept-duplicates-bulk', async (req, res) => {
+  const { placeIds } = req.body || {};
+  if (!Array.isArray(placeIds)) return res.status(400).json({ error: 'placeIds array requerido' });
+  let n = 0;
+  for (const id of placeIds) {
+    const b = businesses[id];
+    if (!b) continue;
+    b.notDuplicate = true;
+    broadcast({ type: 'business', business: b });
+    n++;
+  }
+  await saveBusinesses();
+  res.json({ ok: true, updated: n });
+});
+
 let enrichRunning = false;
 app.post('/api/enrich/approved', async (req, res) => {
   if (enrichRunning) return res.status(409).json({ error: 'Ya en curso' });
@@ -759,15 +783,19 @@ app.post('/api/enrich/approved', async (req, res) => {
         }
         await sleep(RATE_LIMIT_MS);
       }
+      const hasPhoneNow = !!(b.formatted_phone_number || b.international_phone_number);
       try {
-        if (b.notionPageId) await updateNotionPage(b);
-        else {
+        if (b.notionPageId) {
+          await updateNotionPage(b);
+          okN++;
+        } else if (hasPhoneNow) {
           const pageId = await exportToNotion(b);
           b.notionPageId = pageId;
           await saveBusinesses();
           broadcast({ type: 'business', business: b });
+          okN++;
         }
-        okN++;
+        // Sin teléfono y sin Notion: saltar. Queda en sección "segunda verificación".
       } catch (e) {
         const msg = e.response?.data?.message || e.message;
         failN++;

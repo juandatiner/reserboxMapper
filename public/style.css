@@ -67,10 +67,29 @@ button.tiny { font-size: 11px; padding: 4px 8px; }
 #business-list li.approved-item { background: #0b2419; border-color: #166534; }
 #business-list li.done-item { background: #082f49; border-color: #0369a1; opacity: .85; }
 #business-list li.nophone-item { background: #3b1f03; border-color: #b45309; border-left: 3px solid #fbbf24; }
-#business-list li.list-section-header { background: transparent; border: none; padding: 8px 4px 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; font-weight: 700; }
+#business-list li.dup-item { border-left: 3px solid #c084fc; }
+#business-list li.list-section-header { background: transparent; border: none; padding: 8px 4px 2px; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; color: #94a3b8; font-weight: 700; cursor: pointer; user-select: none; }
+#business-list li.list-section-header:hover { color: #e2e8f0; }
+#business-list li.list-section-header .caret { display: inline-block; width: 12px; color: inherit; }
 #business-list li.list-section-header.approved { color: #4ade80; }
 #business-list li.list-section-header.done { color: #38bdf8; }
 #business-list li.list-section-header.nophone { color: #fbbf24; }
+#business-list li.list-section-header.dup { color: #c084fc; }
+#business-list li.dup-group-header { background: #1e1b4b; border: 1px dashed #6366f1; color: #c7d2fe; padding: 6px 10px; font-size: 11px; border-radius: 6px; margin-top: 4px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+#business-list li.dup-group-header i { color: #fbbf24; font-style: normal; font-weight: 600; }
+#business-list .dup-group-accept { background: #14532d; color: #bbf7d0; border: none; padding: 4px 10px; font-weight: 700; font-size: 11px; white-space: nowrap; cursor: pointer; border-radius: 4px; }
+#business-list .dup-group-accept:hover { background: #166534; color: white; }
+
+.pill { display: inline-block; font-size: 10px; padding: 2px 7px; border-radius: 10px; font-weight: 600; line-height: 1.5; }
+.pill.done { background: #082f49; color: #38bdf8; border: 1px solid #0369a1; }
+.pill.nophone { background: #3b1f03; color: #fbbf24; border: 1px solid #b45309; }
+.pill.approved { background: #0b2419; color: #4ade80; border: 1px solid #166534; }
+.pill.pending { background: #1e293b; color: #94a3b8; border: 1px solid #334155; }
+.pill.dup { background: #2e1065; color: #c084fc; border: 1px solid #7c3aed; }
+#business-list .bactions .quick-del { background: #7f1d1d; color: #fecaca; border: none; padding: 3px 8px; font-weight: 700; font-size: 12px; }
+#business-list .bactions .quick-del:hover { background: #b91c1c; color: white; }
+#business-list .bactions .quick-ok { background: #14532d; color: #bbf7d0; border: none; padding: 3px 8px; font-weight: 700; font-size: 12px; }
+#business-list .bactions .quick-ok:hover { background: #166534; color: white; }
 #business-list .bname { font-weight: 600; font-size: 13px; margin-bottom: 4px; color: #e2e8f0; }
 #business-list .bmeta { color: #94a3b8; font-size: 11px; margin-bottom: 2px; }
 #business-list .bactions { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
