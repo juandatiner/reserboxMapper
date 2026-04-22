@@ -3,12 +3,30 @@ const fs = require('fs');
 const fsp = require('fs/promises');
 const path = require('path');
 const axios = require('axios');
+const crypto = require('crypto');
 
 const ENV_PATH = path.join(__dirname, '.env');
-if (!fs.existsSync(ENV_PATH)) fs.writeFileSync(ENV_PATH, '');
-require('dotenv').config({ path: ENV_PATH });
+const ALLOW_ENV_WRITE = process.env.ALLOW_ENV_WRITE !== 'false';
+if (ALLOW_ENV_WRITE) {
+  try {
+    if (!fs.existsSync(ENV_PATH)) fs.writeFileSync(ENV_PATH, '');
+  } catch { /* read-only FS (Railway build) — ignore */ }
+}
+try { require('dotenv').config({ path: ENV_PATH }); } catch {}
 
-const DATA_DIR = path.join(__dirname, 'data');
+const DATA_DIR = process.env.DATA_DIR || path.join(__dirname, 'data');
+const SEED_DIR = path.join(__dirname, 'data-seed');
+try { fs.mkdirSync(DATA_DIR, { recursive: true }); } catch {}
+// First boot on persistent volume: seed from committed snapshot if missing.
+if (fs.existsSync(SEED_DIR)) {
+  for (const f of fs.readdirSync(SEED_DIR)) {
+    const dest = path.join(DATA_DIR, f);
+    if (!fs.existsSync(dest)) {
+      try { fs.copyFileSync(path.join(SEED_DIR, f), dest); }
+      catch (e) { console.error('seed copy failed', f, e.message); }
+    }
+  }
+}
 const BUSINESSES_PATH = path.join(DATA_DIR, 'businesses.json');
 const PROGRESS_PATH = path.join(DATA_DIR, 'progress.json');
 const BUDGET_PATH = path.join(DATA_DIR, 'budget.json');
@@ -535,9 +553,12 @@ async function updateNotionPage(b) {
 
 // ---------- env write ----------
 function writeEnv(obj) {
-  const lines = Object.entries(obj).map(([k, v]) => `${k}=${v}`);
-  fs.writeFileSync(ENV_PATH, lines.join('\n') + '\n');
   for (const [k, v] of Object.entries(obj)) process.env[k] = v;
+  if (!ALLOW_ENV_WRITE) return; // Railway: config via dashboard env vars
+  try {
+    const lines = Object.entries(obj).map(([k, v]) => `${k}=${v}`);
+    fs.writeFileSync(ENV_PATH, lines.join('\n') + '\n');
+  } catch (e) { console.error('writeEnv failed:', e.message); }
 }
 
 async function validateGoogleKey(key) {
@@ -564,7 +585,164 @@ async function validateNotion(token, dbId) {
 
 // ---------- express ----------
 const app = express();
-app.use(express.json({ limit: '2mb' }));
+app.set('trust proxy', 1);
+
+// ---------- auth (login page + signed session cookie) ----------
+const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD || '';
+const SESSION_COOKIE = 'rb_session';
+const SESSION_TTL_MS = 30 * 24 * 3600 * 1000;
+const SESSION_SECRET = process.env.SESSION_SECRET ||
+  crypto.createHash('sha256').update('rb:' + (ACCESS_PASSWORD || 'dev')).digest('hex');
+
+function signSession(ts) {
+  return crypto.createHmac('sha256', SESSION_SECRET).update(String(ts)).digest('hex');
+}
+function makeToken() {
+  const ts = Date.now();
+  return `${ts}.${signSession(ts)}`;
+}
+function verifyToken(token) {
+  if (!token || typeof token !== 'string') return false;
+  const dot = token.indexOf('.');
+  if (dot < 0) return false;
+  const ts = Number(token.slice(0, dot));
+  const sig = token.slice(dot + 1);
+  if (!Number.isFinite(ts) || Date.now() - ts > SESSION_TTL_MS) return false;
+  const expected = signSession(ts);
+  const a = Buffer.from(sig), b = Buffer.from(expected);
+  return a.length === b.length && crypto.timingSafeEqual(a, b);
+}
+function parseCookies(req) {
+  const out = {};
+  const hdr = req.headers.cookie;
+  if (!hdr) return out;
+  for (const part of hdr.split(';')) {
+    const i = part.indexOf('=');
+    if (i < 0) continue;
+    out[part.slice(0, i).trim()] = decodeURIComponent(part.slice(i + 1).trim());
+  }
+  return out;
+}
+function setSessionCookie(req, res) {
+  const secure = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  const token = makeToken();
+  res.set('Set-Cookie',
+    `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${SESSION_TTL_MS / 1000}` +
+    (secure ? '; Secure' : ''));
+}
+function clearSessionCookie(res) {
+  res.set('Set-Cookie', `${SESSION_COOKIE}=; Path=/; HttpOnly; Max-Age=0`);
+}
+
+const LOGIN_HTML = `<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ReserBox Mapper — Ingresar</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; }
+  .wrap { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .card { background: #1e293b; padding: 36px 32px; border-radius: 14px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
+  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
+  .logo { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: grid; place-items: center; font-weight: 700; color: white; font-size: 16px; }
+  h1 { margin: 0; font-size: 18px; font-weight: 600; }
+  .sub { margin: 2px 0 0; font-size: 13px; color: #94a3b8; }
+  label { display: block; margin-bottom: 6px; font-size: 13px; color: #cbd5e1; }
+  input { width: 100%; padding: 11px 13px; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border-color .15s; }
+  input:focus { border-color: #3b82f6; }
+  button { width: 100%; margin-top: 16px; padding: 11px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; }
+  button:hover:not(:disabled) { background: #2563eb; }
+  button:disabled { opacity: .6; cursor: not-allowed; }
+  .msg { margin-top: 14px; font-size: 13px; min-height: 18px; text-align: center; }
+  .msg.err { color: #f87171; }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <form class="card" id="f">
+      <div class="brand">
+        <div class="logo">R</div>
+        <div>
+          <h1>ReserBox Mapper</h1>
+          <p class="sub">Acceso restringido</p>
+        </div>
+      </div>
+      <label for="pw">Contraseña</label>
+      <input type="password" id="pw" autofocus autocomplete="current-password" required />
+      <button type="submit" id="btn">Ingresar</button>
+      <div class="msg" id="msg"></div>
+    </form>
+  </div>
+<script>
+  const f = document.getElementById('f');
+  const btn = document.getElementById('btn');
+  const msg = document.getElementById('msg');
+  f.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    btn.disabled = true; msg.textContent = ''; msg.className = 'msg';
+    try {
+      const r = await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: document.getElementById('pw').value })
+      });
+      if (r.ok) {
+        const params = new URLSearchParams(location.search);
+        location.href = params.get('next') || '/';
+        return;
+      }
+      const d = await r.json().catch(() => ({}));
+      msg.textContent = d.error || 'Clave incorrecta';
+      msg.className = 'msg err';
+      btn.disabled = false;
+    } catch (err) {
+      msg.textContent = 'Error de red';
+      msg.className = 'msg err';
+      btn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>`;
+
+app.use(express.json({ limit: '100mb' }));
+
+app.get('/login', (req, res) => {
+  if (!ACCESS_PASSWORD) return res.redirect('/');
+  const token = parseCookies(req)[SESSION_COOKIE];
+  if (verifyToken(token)) return res.redirect('/');
+  res.type('html').send(LOGIN_HTML);
+});
+
+app.post('/api/login', (req, res) => {
+  const { password } = req.body || {};
+  if (!ACCESS_PASSWORD) return res.json({ ok: true });
+  if (typeof password !== 'string' || !password) return res.status(400).json({ error: 'Falta contraseña' });
+  const pBuf = Buffer.from(password);
+  const exp = Buffer.from(ACCESS_PASSWORD);
+  const ok = pBuf.length === exp.length && crypto.timingSafeEqual(pBuf, exp);
+  if (!ok) return res.status(401).json({ error: 'Clave incorrecta' });
+  setSessionCookie(req, res);
+  res.json({ ok: true });
+});
+
+app.post('/api/logout', (req, res) => {
+  clearSessionCookie(res);
+  res.json({ ok: true });
+});
+
+function requireAuth(req, res, next) {
+  if (!ACCESS_PASSWORD) return next();
+  const token = parseCookies(req)[SESSION_COOKIE];
+  if (verifyToken(token)) return next();
+  if (req.path.startsWith('/api/')) return res.status(401).json({ error: 'Sesión requerida' });
+  const next_ = encodeURIComponent(req.originalUrl || '/');
+  res.redirect(`/login?next=${next_}`);
+}
+app.use(requireAuth);
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/config/status', (req, res) => {
@@ -1072,8 +1250,49 @@ app.get('/api/stream', (req, res) => {
   req.on('close', () => sseClients.delete(res));
 });
 
+app.get('/api/admin/backup', (req, res) => {
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    version: 1,
+    businesses,
+    progress,
+    budget,
+    blacklist: { placeIds: Array.from(blacklistSet) },
+    settings
+  };
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  res.set('Content-Disposition', `attachment; filename="reserbox-backup-${stamp}.json"`);
+  res.json(payload);
+});
+
+app.post('/api/admin/restore', async (req, res) => {
+  const data = req.body;
+  if (!data || typeof data !== 'object') return res.status(400).json({ error: 'JSON inválido' });
+  const { mode = 'merge' } = req.query;
+  try {
+    if (data.businesses && typeof data.businesses === 'object') {
+      businesses = mode === 'replace' ? data.businesses : { ...businesses, ...data.businesses };
+    }
+    if (data.progress && typeof data.progress === 'object') {
+      progress = mode === 'replace' ? data.progress : { ...progress, ...data.progress };
+    }
+    if (data.budget && typeof data.budget === 'object') budget = { ...budget, ...data.budget };
+    if (data.settings && typeof data.settings === 'object') settings = { ...settings, ...data.settings };
+    if (data.blacklist?.placeIds && Array.isArray(data.blacklist.placeIds)) {
+      if (mode === 'replace') blacklistSet.clear();
+      for (const id of data.blacklist.placeIds) blacklistSet.add(id);
+    }
+    await Promise.all([saveBusinesses(), saveProgress(), saveBudget(), saveBlacklist(), saveSettings()]);
+    broadcast({ type: 'restored', total: Object.keys(businesses).length });
+    res.json({ ok: true, mode, total: Object.keys(businesses).length });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log(`ReserBox Mapper → http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`ReserBox Mapper → port ${PORT}`);
+  console.log(`DATA_DIR: ${DATA_DIR}`);
   console.log(`Locales cargados: ${Object.keys(businesses).length}`);
 });

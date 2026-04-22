@@ -85,6 +85,85 @@ Al reiniciar el servidor carga todo automáticamente. Podés ver los locales ya 
 
 `data/bogota-localidades.geojson` contiene polígonos aproximados (rectangulares) de las 20 localidades. Para mayor precisión descargá los límites oficiales de https://datosabiertos.bogota.gov.co y reemplazá el archivo manteniendo la misma estructura de propiedades (`nombre`).
 
+## Deploy a Railway (paso a paso)
+
+### 1. Antes de pushear
+
+Si querés arrancar Railway con tu cache actual (recomendado), sincronizá el snapshot:
+
+```bash
+cp data/*.json data-seed/
+git add data-seed server.js railway.json .dockerignore .env.example README.md
+git commit -m "railway: deploy ready"
+git push origin main
+```
+
+El snapshot `data-seed/` queda en el repo. El primer boot del volume lo usa como semilla. Después el volume persiste todo lo nuevo.
+
+### 2. Crear proyecto en Railway
+
+1. [railway.app](https://railway.app) → **New Project** → **Deploy from GitHub repo** → seleccioná este repo.
+2. Railway detecta Node.js automáticamente (Nixpacks) y construye.
+
+### 3. Montar volume persistente
+
+1. En el servicio → pestaña **Settings** → **Volumes** → **New Volume**.
+2. Mount path: `/data`
+3. Size: 1GB sobra (tu JSON pesa ~4MB).
+
+### 4. Variables de entorno
+
+Pestaña **Variables**, agregá **todas** estas:
+
+| Variable | Valor | Notas |
+|---|---|---|
+| `DATA_DIR` | `/data` | ruta del volume |
+| `ALLOW_ENV_WRITE` | `false` | bloquea escritura de `.env` en FS read-only |
+| `ACCESS_USER` | `admin` | usuario del login (opcional, default `admin`) |
+| `ACCESS_PASSWORD` | *(elegí una fuerte)* | **sin esto la web queda pública** |
+| `GOOGLE_PLACES_API_KEY` | tu key | |
+| `NOTION_TOKEN` | tu token | |
+| `NOTION_DATABASE_ID` | tu db id | |
+
+Railway inyecta `PORT` solo.
+
+### 5. Redeploy y entrar
+
+Cualquier cambio de variables dispara redeploy. Cuando termina:
+
+1. Settings → **Networking** → **Generate Domain** → copiá la URL pública.
+2. Abrí la URL → el navegador pide usuario + contraseña (los que pusiste en `ACCESS_USER` / `ACCESS_PASSWORD`).
+3. La app arranca con los 5060 locales ya cargados desde `data-seed/`.
+
+Compartí URL + credenciales con tu compañero. Ambos ven los mismos datos en vivo (SSE sincroniza cambios).
+
+### 6. Backups
+
+- **Descargar backup manual**: `https://tu-app.up.railway.app/api/admin/backup` → JSON con todo (businesses, progress, budget, blacklist, settings). Guardalo periódicamente.
+- **Restaurar**: `POST /api/admin/restore` con el JSON del backup en el body. Query param `?mode=merge` (default, agrega) o `?mode=replace` (reemplaza todo).
+
+Ejemplo:
+
+```bash
+# Backup
+curl -u admin:TU_PASS https://tu-app.up.railway.app/api/admin/backup -o backup.json
+
+# Restore (merge)
+curl -u admin:TU_PASS -X POST -H "Content-Type: application/json" \
+  --data @backup.json https://tu-app.up.railway.app/api/admin/restore
+```
+
+### 7. Actualizar código sin perder datos
+
+`git push` → Railway rebuildea y redeploya → **volume persiste**. El seed solo copia archivos si no existen en el volume, así que no pisa lo acumulado.
+
+Si querés actualizar el snapshot del repo (opcional, solo relevante para un nuevo proyecto Railway desde cero):
+
+```bash
+cp data/*.json data-seed/
+git add data-seed && git commit -m "snapshot" && git push
+```
+
 ## Endpoints
 
 - `GET /api/config/status` — hay keys guardadas?
@@ -102,3 +181,5 @@ Al reiniciar el servidor carga todo automáticamente. Podés ver los locales ya 
 - `POST /api/notion/export/:placeId` — exporta uno
 - `POST /api/notion/export-all` — exporta todos los pendientes
 - `GET /api/stream` — Server-Sent Events para updates en tiempo real
+- `GET /api/admin/backup` — descarga JSON con todo el estado
+- `POST /api/admin/restore?mode=merge|replace` — restaura desde JSON de backup

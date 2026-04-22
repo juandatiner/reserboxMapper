@@ -1,0 +1,26 @@
+{
+  "type": "FeatureCollection",
+  "note": "Approximate bounding polygons for Bogotá's 20 localidades. Not official. For exact shapes download from datosabiertos.bogota.gov.co and replace this file.",
+  "features": [
+    {"type":"Feature","properties":{"id":1,"nombre":"Usaquén"},"geometry":{"type":"Polygon","coordinates":[[[-74.07,4.82],[-74.00,4.82],[-74.00,4.68],[-74.07,4.68],[-74.07,4.82]]]}},
+    {"type":"Feature","properties":{"id":2,"nombre":"Chapinero"},"geometry":{"type":"Polygon","coordinates":[[[-74.09,4.68],[-74.02,4.68],[-74.02,4.61],[-74.09,4.61],[-74.09,4.68]]]}},
+    {"type":"Feature","properties":{"id":3,"nombre":"Santa Fe"},"geometry":{"type":"Polygon","coordinates":[[[-74.09,4.61],[-74.04,4.61],[-74.04,4.57],[-74.09,4.57],[-74.09,4.61]]]}},
+    {"type":"Feature","properties":{"id":4,"nombre":"San Cristóbal"},"geometry":{"type":"Polygon","coordinates":[[[-74.12,4.58],[-74.06,4.58],[-74.06,4.48],[-74.12,4.48],[-74.12,4.58]]]}},
+    {"type":"Feature","properties":{"id":5,"nombre":"Usme"},"geometry":{"type":"Polygon","coordinates":[[[-74.17,4.50],[-74.08,4.50],[-74.08,4.30],[-74.17,4.30],[-74.17,4.50]]]}},
+    {"type":"Feature","properties":{"id":6,"nombre":"Tunjuelito"},"geometry":{"type":"Polygon","coordinates":[[[-74.17,4.58],[-74.11,4.58],[-74.11,4.54],[-74.17,4.54],[-74.17,4.58]]]}},
+    {"type":"Feature","properties":{"id":7,"nombre":"Bosa"},"geometry":{"type":"Polygon","coordinates":[[[-74.22,4.65],[-74.15,4.65],[-74.15,4.58],[-74.22,4.58],[-74.22,4.65]]]}},
+    {"type":"Feature","properties":{"id":8,"nombre":"Kennedy"},"geometry":{"type":"Polygon","coordinates":[[[-74.19,4.65],[-74.10,4.65],[-74.10,4.57],[-74.19,4.57],[-74.19,4.65]]]}},
+    {"type":"Feature","properties":{"id":9,"nombre":"Fontibón"},"geometry":{"type":"Polygon","coordinates":[[[-74.20,4.70],[-74.11,4.70],[-74.11,4.65],[-74.20,4.65],[-74.20,4.70]]]}},
+    {"type":"Feature","properties":{"id":10,"nombre":"Engativá"},"geometry":{"type":"Polygon","coordinates":[[[-74.15,4.74],[-74.08,4.74],[-74.08,4.67],[-74.15,4.67],[-74.15,4.74]]]}},
+    {"type":"Feature","properties":{"id":11,"nombre":"Suba"},"geometry":{"type":"Polygon","coordinates":[[[-74.15,4.82],[-74.03,4.82],[-74.03,4.70],[-74.15,4.70],[-74.15,4.82]]]}},
+    {"type":"Feature","properties":{"id":12,"nombre":"Barrios Unidos"},"geometry":{"type":"Polygon","coordinates":[[[-74.10,4.68],[-74.05,4.68],[-74.05,4.65],[-74.10,4.65],[-74.10,4.68]]]}},
+    {"type":"Feature","properties":{"id":13,"nombre":"Teusaquillo"},"geometry":{"type":"Polygon","coordinates":[[[-74.10,4.66],[-74.05,4.66],[-74.05,4.61],[-74.10,4.61],[-74.10,4.66]]]}},
+    {"type":"Feature","properties":{"id":14,"nombre":"Los Mártires"},"geometry":{"type":"Polygon","coordinates":[[[-74.10,4.62],[-74.07,4.62],[-74.07,4.59],[-74.10,4.59],[-74.10,4.62]]]}},
+    {"type":"Feature","properties":{"id":15,"nombre":"Antonio Nariño"},"geometry":{"type":"Polygon","coordinates":[[[-74.10,4.60],[-74.07,4.60],[-74.07,4.57],[-74.10,4.57],[-74.10,4.60]]]}},
+    {"type":"Feature","properties":{"id":16,"nombre":"Puente Aranda"},"geometry":{"type":"Polygon","coordinates":[[[-74.13,4.64],[-74.08,4.64],[-74.08,4.60],[-74.13,4.60],[-74.13,4.64]]]}},
+    {"type":"Feature","properties":{"id":17,"nombre":"La Candelaria"},"geometry":{"type":"Polygon","coordinates":[[[-74.08,4.60],[-74.06,4.60],[-74.06,4.58],[-74.08,4.58],[-74.08,4.60]]]}},
+    {"type":"Feature","properties":{"id":18,"nombre":"Rafael Uribe Uribe"},"geometry":{"type":"Polygon","coordinates":[[[-74.12,4.58],[-74.08,4.58],[-74.08,4.53],[-74.12,4.53],[-74.12,4.58]]]}},
+    {"type":"Feature","properties":{"id":19,"nombre":"Ciudad Bolívar"},"geometry":{"type":"Polygon","coordinates":[[[-74.22,4.58],[-74.10,4.58],[-74.10,4.45],[-74.22,4.45],[-74.22,4.58]]]}},
+    {"type":"Feature","properties":{"id":20,"nombre":"Sumapaz"},"geometry":{"type":"Polygon","coordinates":[[[-74.45,4.35],[-74.10,4.35],[-74.10,3.70],[-74.45,3.70],[-74.45,4.35]]]}}
+  ]
+}
