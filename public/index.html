@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ReserBox Mapper — Bogotá</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <div id="setup" class="hidden">
+    <div class="setup-card">
+      <h1>ReserBox Mapper</h1>
+      <p>Configuración inicial. Pegá tus claves para empezar.</p>
+      <label>Google Places API Key
+        <input id="cfg-google" type="password" placeholder="AIza..." autocomplete="off" />
+      </label>
+      <label>Notion Integration Token
+        <input id="cfg-notion-token" type="password" placeholder="ntn_..." autocomplete="off" />
+      </label>
+      <label>Notion Database ID
+        <input id="cfg-notion-db" type="text" placeholder="32 caracteres sin guiones o UUID" autocomplete="off" />
+      </label>
+      <div class="setup-actions">
+        <button id="btn-validate">Validar</button>
+        <button id="btn-save" class="primary" disabled>Guardar y empezar</button>
+      </div>
+      <div id="setup-msg" class="setup-msg"></div>
+    </div>
+  </div>
+
+  <div id="app" class="hidden">
+    <div id="map"></div>
+
+    <aside id="sidebar">
+      <header class="sidebar-header">
+        <h2>ReserBox Mapper</h2>
+        <div class="status-row">
+          <span id="status-dot" class="dot idle"></span>
+          <span id="status-text">Inactivo</span>
+        </div>
+      </header>
+
+      <section class="budget-box">
+        <div class="budget-row">
+          <span>Estado API</span><b id="b-state">—</b>
+        </div>
+        <button id="btn-toggle-budget" class="tiny">Bloquear</button>
+      </section>
+
+      <section class="controls">
+        <div class="tiny">Modo: Ahorro (fijo)</div>
+        <label>Iniciar búsqueda en:
+          <select id="localidad-select"></select>
+        </label>
+        <div class="btn-row">
+          <button id="btn-start" class="primary">Iniciar</button>
+          <button id="btn-stop" disabled>Parar</button>
+        </div>
+      </section>
+
+      <section class="filters">
+        <h3>Filtros</h3>
+        <label>Categoría
+          <select id="filter-category"><option value="">Todas</option></select>
+        </label>
+        <label>Localidad
+          <select id="filter-localidad"><option value="">Todas</option></select>
+        </label>
+        <input id="filter-text" type="text" placeholder="Buscar por nombre..." />
+      </section>
+
+      <section class="counts">
+        <div><b id="count-total">0</b> totales</div>
+        <div><b id="count-approved">0</b> aprobados</div>
+        <div id="filter-wrap" class="hidden"><b id="count-filtered">0</b> filtrados</div>
+      </section>
+
+      <section class="export">
+        <button id="btn-cleanup" class="ghost">Limpiar spam (polleria, hotel, etc.)</button>
+        <div id="cleanup-live" class="tiny hidden"></div>
+        <button id="btn-review" class="primary">Revisar 1×1 locales</button>
+        <button id="btn-enrich" class="primary">Traer contacto de aprobados → Notion</button>
+        <div id="enrich-live" class="tiny hidden"></div>
+        <div class="tiny" id="blacklist-info">Blacklist: 0 locales</div>
+      </section>
+
+      <ul id="business-list"></ul>
+    </aside>
+
+    <div id="toast" class="toast hidden"></div>
+
+    <div id="confirm-modal" class="modal hidden">
+      <div class="confirm-card">
+        <div id="confirm-title" class="confirm-title">Confirmar</div>
+        <div id="confirm-msg" class="confirm-msg"></div>
+        <div class="confirm-actions">
+          <button id="confirm-cancel" class="ghost">Cancelar</button>
+          <button id="confirm-ok" class="primary">Aceptar</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="review-modal" class="modal hidden">
+      <div class="review-card">
+        <header class="review-head">
+          <span id="review-counter">0 / 0</span>
+          <button id="review-close" class="ghost tiny">Cerrar (Esc)</button>
+        </header>
+        <div id="review-body"></div>
+        <footer class="review-actions">
+          <button id="review-reject" class="reject">✗ Eliminar (J)</button>
+          <button id="review-approve" class="approve">✓ Aprobar (L)</button>
+        </footer>
+        <div class="tiny" style="text-align:center;margin-top:8px;color:#64748b">Teclado: J=eliminar · L=aprobar · Esc cerrar</div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

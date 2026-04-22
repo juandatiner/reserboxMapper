@@ -1,0 +1,18 @@
+{
+  "name": "reserbox-mapper",
+  "version": "1.0.0",
+  "description": "Bogotá business prospecting tool for ReserBox — maps potential appointment-based clients using Google Places API and syncs to Notion.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.2",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
