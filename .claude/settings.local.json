@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(awk 'NR>=1114 && /app\\\\.\\(get|post|put|delete|use\\)/' server.js)"
+    ]
+  }
+}

@@ -642,11 +642,6 @@ Costo: $${cost}`;
     document.getElementById(id).addEventListener('input', refreshList);
   }
 
-  fetch('/api/settings', {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ searchMode: 'economy', autoNotion: false })
-  });
-
   document.getElementById('business-list').addEventListener('click', async e => {
     const t = e.target;
     if (t.dataset.del) {

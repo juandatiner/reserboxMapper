@@ -115,12 +115,17 @@ const SPAM_TYPES = new Set([
   'police','fire_station','local_government_office','city_hall','courthouse','embassy',
   'transit_station','bus_station','train_station','subway_station','taxi_stand'
 ]);
+const NAME_BLACKLIST_RE = new RegExp(
+  '(?:^|[^a-záéíóúñ])(?:' +
+  NAME_BLACKLIST.map(w => w.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') +
+  ')(?:[^a-záéíóúñ]|$)',
+  'i'
+);
 function isSpam(place) {
   const name = (place.name || '').trim();
   if (name.length < 3) return true;                    // 1-2 chars basura
   if (/^[\d\s.\-+]+$/.test(name)) return true;         // solo números/simbolos
-  const lower = name.toLowerCase();
-  if (NAME_BLACKLIST.some(w => lower.includes(w))) return true;
+  if (NAME_BLACKLIST_RE.test(name)) return true;
   const types = place.types || [];
   if (types.some(t => SPAM_TYPES.has(t))) return true;
   return false;
@@ -157,7 +162,9 @@ function readJson(p, fallback) {
   try { return JSON.parse(fs.readFileSync(p, 'utf8')); } catch { return fallback; }
 }
 async function writeJson(p, data) {
-  await fsp.writeFile(p, JSON.stringify(data, null, 2));
+  const tmp = p + '.tmp';
+  await fsp.writeFile(tmp, JSON.stringify(data, null, 2));
+  await fsp.rename(tmp, p);
 }
 
 const BLACKLIST_PATH = path.join(DATA_DIR, 'blacklist.json');
@@ -587,6 +594,11 @@ async function validateNotion(token, dbId) {
 const app = express();
 app.set('trust proxy', 1);
 
+// Health endpoint (no auth) — for Railway healthcheck / uptime monitors.
+app.get('/healthz', (req, res) => {
+  res.json({ ok: true, ts: Date.now(), businesses: Object.keys(businesses).length });
+});
+
 // ---------- auth (login page + signed session cookie) ----------
 const ACCESS_PASSWORD = process.env.ACCESS_PASSWORD || '';
 const SESSION_COOKIE = 'rb_session';
@@ -640,23 +652,26 @@ const LOGIN_HTML = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>ReserBox Mapper — Ingresar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap">
 <style>
   * { box-sizing: border-box; }
-  html, body { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: #0f172a; color: #e2e8f0; }
+  html, body { margin: 0; padding: 0; height: 100%; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #faf9f7; color: #1a1a1a; -webkit-font-smoothing: antialiased; }
   .wrap { min-height: 100%; display: flex; align-items: center; justify-content: center; padding: 24px; }
-  .card { background: #1e293b; padding: 36px 32px; border-radius: 14px; width: 100%; max-width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.5); }
-  .brand { display: flex; align-items: center; gap: 10px; margin-bottom: 24px; }
-  .logo { width: 36px; height: 36px; border-radius: 8px; background: linear-gradient(135deg, #3b82f6, #8b5cf6); display: grid; place-items: center; font-weight: 700; color: white; font-size: 16px; }
-  h1 { margin: 0; font-size: 18px; font-weight: 600; }
-  .sub { margin: 2px 0 0; font-size: 13px; color: #94a3b8; }
-  label { display: block; margin-bottom: 6px; font-size: 13px; color: #cbd5e1; }
-  input { width: 100%; padding: 11px 13px; background: #0f172a; border: 1px solid #334155; color: #e2e8f0; border-radius: 8px; font-size: 14px; outline: none; transition: border-color .15s; }
-  input:focus { border-color: #3b82f6; }
-  button { width: 100%; margin-top: 16px; padding: 11px; background: #3b82f6; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: background .15s; }
-  button:hover:not(:disabled) { background: #2563eb; }
-  button:disabled { opacity: .6; cursor: not-allowed; }
-  .msg { margin-top: 14px; font-size: 13px; min-height: 18px; text-align: center; }
-  .msg.err { color: #f87171; }
+  .card { background: #ffffff; padding: 40px 36px; border-radius: 20px; width: 100%; max-width: 400px; box-shadow: 0 20px 50px rgba(17,24,39,.10); border: 1px solid #e7e5e0; }
+  .brand { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+  .logo { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, #ff385c, #ff6b8a); display: grid; place-items: center; font-weight: 800; color: white; font-size: 18px; box-shadow: 0 4px 14px rgba(255,56,92,.35); }
+  h1 { margin: 0; font-size: 18px; font-weight: 700; letter-spacing: -.01em; }
+  .sub { margin: 2px 0 0; font-size: 13px; color: #6b6b6b; }
+  label { display: block; margin-bottom: 8px; font-size: 13px; color: #1a1a1a; font-weight: 500; }
+  input { width: 100%; padding: 12px 14px; background: #fff; border: 1px solid #e7e5e0; color: #1a1a1a; border-radius: 10px; font-size: 14px; outline: none; transition: border-color .15s, box-shadow .15s; font-family: inherit; }
+  input:focus { border-color: #ff385c; box-shadow: 0 0 0 3px #ffe4ea; }
+  button { width: 100%; margin-top: 18px; padding: 13px; background: #ff385c; color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background .15s; font-family: inherit; }
+  button:hover:not(:disabled) { background: #e11d48; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  .msg { margin-top: 14px; font-size: 13px; min-height: 18px; text-align: center; font-weight: 500; }
+  .msg.err { color: #dc2626; }
 </style>
 </head>
 <body>
@@ -1291,8 +1306,37 @@ app.post('/api/admin/restore', async (req, res) => {
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`ReserBox Mapper → port ${PORT}`);
-  console.log(`DATA_DIR: ${DATA_DIR}`);
-  console.log(`Locales cargados: ${Object.keys(businesses).length}`);
-});
+
+// Production safety: refuse to start publicly-exposed without password.
+const IS_PROD = process.env.NODE_ENV === 'production' || !!process.env.RAILWAY_ENVIRONMENT;
+if (IS_PROD && !ACCESS_PASSWORD) {
+  console.error('FATAL: producción detectada sin ACCESS_PASSWORD. Configurá la variable o la web queda pública.');
+  process.exit(1);
+}
+
+// Listen with auto-fallback: if PORT is busy, try PORT+1..PORT+20 (dev convenience).
+// In prod (Railway) don't fallback — PORT is injected and must bind.
+function listenWithFallback(startPort, maxAttempts) {
+  let attempt = 0;
+  const tryListen = (port) => {
+    const server = app.listen(port, '0.0.0.0', () => {
+      console.log(`ReserBox Mapper → http://localhost:${port}`);
+      console.log(`DATA_DIR: ${DATA_DIR}`);
+      console.log(`Locales cargados: ${Object.keys(businesses).length}`);
+      if (port !== startPort) console.log(`ℹ  Puerto ${startPort} ocupado, usando ${port}`);
+      if (!ACCESS_PASSWORD) console.warn('⚠  ACCESS_PASSWORD vacío → auth DESHABILITADA (modo dev).');
+    });
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE' && !IS_PROD && attempt < maxAttempts) {
+        attempt++;
+        tryListen(port + 1);
+      } else {
+        console.error(`FATAL: no pude bindear puerto: ${err.message}`);
+        process.exit(1);
+      }
+    });
+  };
+  tryListen(startPort);
+}
+
+listenWithFallback(Number(PORT), 20);

@@ -127,6 +127,10 @@ Pestaña **Variables**, agregá **todas** estas:
 
 Railway inyecta `PORT` solo.
 
+> **Seguridad:** si `NODE_ENV=production` (Railway lo setea) y **no** configurás `ACCESS_PASSWORD`, el servidor se niega a arrancar. Esto previene que la web quede pública por accidente.
+
+**Healthcheck opcional (recomendado):** Settings → **Healthcheck** → Path: `/healthz`. Railway reintentará hasta que devuelva 200 antes de rotar deploys.
+
 ### 5. Redeploy y entrar
 
 Cualquier cambio de variables dispara redeploy. Cuando termina:
@@ -183,3 +187,4 @@ git add data-seed && git commit -m "snapshot" && git push
 - `GET /api/stream` — Server-Sent Events para updates en tiempo real
 - `GET /api/admin/backup` — descarga JSON con todo el estado
 - `POST /api/admin/restore?mode=merge|replace` — restaura desde JSON de backup
+- `GET /healthz` — healthcheck sin auth (para Railway / uptime monitors)

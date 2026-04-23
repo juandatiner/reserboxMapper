@@ -4,6 +4,9 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>ReserBox Mapper — Bogotá</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -11,8 +14,14 @@
 
   <div id="setup" class="hidden">
     <div class="setup-card">
-      <h1>ReserBox Mapper</h1>
-      <p>Configuración inicial. Pegá tus claves para empezar.</p>
+      <div class="brand-block">
+        <div class="brand-logo">R</div>
+        <div>
+          <h1>ReserBox Mapper</h1>
+          <p class="subtle">Configuración inicial</p>
+        </div>
+      </div>
+      <p class="hint">Pegá tus claves para empezar. Se validan antes de guardarse.</p>
       <label>Google Places API Key
         <input id="cfg-google" type="password" placeholder="AIza..." autocomplete="off" />
       </label>
@@ -20,10 +29,10 @@
         <input id="cfg-notion-token" type="password" placeholder="ntn_..." autocomplete="off" />
       </label>
       <label>Notion Database ID
-        <input id="cfg-notion-db" type="text" placeholder="32 caracteres sin guiones o UUID" autocomplete="off" />
+        <input id="cfg-notion-db" type="text" placeholder="32 caracteres o UUID" autocomplete="off" />
       </label>
       <div class="setup-actions">
-        <button id="btn-validate">Validar</button>
+        <button id="btn-validate" class="ghost">Validar</button>
         <button id="btn-save" class="primary" disabled>Guardar y empezar</button>
       </div>
       <div id="setup-msg" class="setup-msg"></div>
@@ -35,33 +44,41 @@
 
     <aside id="sidebar">
       <header class="sidebar-header">
-        <h2>ReserBox Mapper</h2>
+        <div class="brand-block compact">
+          <div class="brand-logo">R</div>
+          <div>
+            <h2>ReserBox Mapper</h2>
+            <p class="subtle" id="queue-info">Cola Notion: 0</p>
+          </div>
+        </div>
         <div class="status-row">
           <span id="status-dot" class="dot idle"></span>
           <span id="status-text">Inactivo</span>
         </div>
       </header>
 
-      <section class="budget-box">
-        <div class="budget-row">
-          <span>Estado API</span><b id="b-state">—</b>
+      <section class="card">
+        <div class="card-head">
+          <span class="card-title">Estado API</span>
+          <b id="b-state" class="card-value">—</b>
         </div>
-        <button id="btn-toggle-budget" class="tiny">Bloquear</button>
+        <button id="btn-toggle-budget" class="tiny ghost">Bloquear</button>
       </section>
 
-      <section class="controls">
-        <div class="tiny">Modo: Ahorro (fijo)</div>
-        <label>Iniciar búsqueda en:
+      <section class="card">
+        <div class="card-title">Buscar negocios</div>
+        <span class="subtle tiny">Modo: Ahorro (fijo)</span>
+        <label>Localidad
           <select id="localidad-select"></select>
         </label>
         <div class="btn-row">
           <button id="btn-start" class="primary">Iniciar</button>
-          <button id="btn-stop" disabled>Parar</button>
+          <button id="btn-stop" class="ghost" disabled>Parar</button>
         </div>
       </section>
 
-      <section class="filters">
-        <h3>Filtros</h3>
+      <section class="card">
+        <div class="card-title">Filtros</div>
         <label>Categoría
           <select id="filter-category"><option value="">Todas</option></select>
         </label>
@@ -71,19 +88,20 @@
         <input id="filter-text" type="text" placeholder="Buscar por nombre..." />
       </section>
 
-      <section class="counts">
-        <div><b id="count-total">0</b> totales</div>
-        <div><b id="count-approved">0</b> aprobados</div>
-        <div id="filter-wrap" class="hidden"><b id="count-filtered">0</b> filtrados</div>
+      <section class="stats-row">
+        <div class="stat"><b id="count-total">0</b><span>totales</span></div>
+        <div class="stat"><b id="count-approved">0</b><span>aprobados</span></div>
+        <div class="stat hidden" id="filter-wrap"><b id="count-filtered">0</b><span>filtrados</span></div>
       </section>
 
-      <section class="export">
-        <button id="btn-cleanup" class="ghost">Limpiar spam (polleria, hotel, etc.)</button>
-        <div id="cleanup-live" class="tiny hidden"></div>
+      <section class="card">
+        <div class="card-title">Acciones</div>
         <button id="btn-review" class="primary">Revisar 1×1 locales</button>
-        <button id="btn-enrich" class="primary">Traer contacto de aprobados → Notion</button>
-        <div id="enrich-live" class="tiny hidden"></div>
-        <div class="tiny" id="blacklist-info">Blacklist: 0 locales</div>
+        <button id="btn-enrich" class="accent">Traer contacto → Notion</button>
+        <button id="btn-cleanup" class="ghost">Limpiar spam</button>
+        <div id="enrich-live" class="tiny subtle hidden"></div>
+        <div id="cleanup-live" class="tiny subtle hidden"></div>
+        <div class="tiny subtle" id="blacklist-info">Blacklist: 0 locales</div>
       </section>
 
       <ul id="business-list"></ul>
@@ -105,15 +123,15 @@
     <div id="review-modal" class="modal hidden">
       <div class="review-card">
         <header class="review-head">
-          <span id="review-counter">0 / 0</span>
-          <button id="review-close" class="ghost tiny">Cerrar (Esc)</button>
+          <span id="review-counter" class="subtle">0 / 0</span>
+          <button id="review-close" class="tiny ghost">Cerrar (Esc)</button>
         </header>
         <div id="review-body"></div>
         <footer class="review-actions">
           <button id="review-reject" class="reject">✗ Eliminar (J)</button>
           <button id="review-approve" class="approve">✓ Aprobar (L)</button>
         </footer>
-        <div class="tiny" style="text-align:center;margin-top:8px;color:#64748b">Teclado: J=eliminar · L=aprobar · Esc cerrar</div>
+        <div class="tiny subtle" style="text-align:center;margin-top:10px">J=eliminar · L=aprobar · Esc cerrar</div>
       </div>
     </div>
   </div>
