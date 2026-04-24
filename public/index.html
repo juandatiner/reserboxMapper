@@ -46,69 +46,86 @@
       <header class="sidebar-header">
         <div class="brand-block compact">
           <div class="brand-logo">R</div>
-          <div>
+          <div class="brand-text">
             <h2>ReserBox Mapper</h2>
-            <p class="subtle" id="queue-info">Cola Notion: 0</p>
+            <p class="subtle" id="queue-info">Listo</p>
           </div>
+          <button id="btn-settings" class="icon-btn" title="Opciones avanzadas" aria-label="Opciones avanzadas"></button>
         </div>
-        <div class="status-row">
-          <span id="status-dot" class="dot idle"></span>
-          <span id="status-text">Inactivo</span>
+        <div class="header-pills">
+          <span class="status-row">
+            <span id="status-dot" class="dot idle"></span>
+            <span id="status-text">Inactivo</span>
+          </span>
+          <span class="budget-pill" id="b-state-pill" title="Estado Google Places API">
+            <span class="budget-icon"></span>
+            <b id="b-state">—</b>
+          </span>
         </div>
       </header>
 
-      <section class="card">
-        <div class="card-head">
-          <span class="card-title">Estado API</span>
-          <b id="b-state" class="card-value">—</b>
-        </div>
-        <button id="btn-toggle-budget" class="tiny ghost">Bloquear</button>
-      </section>
+      <!-- Step progress -->
+      <ol id="step-progress" class="step-progress" aria-label="Flujo de trabajo">
+        <li data-step="search"><span class="step-circle">1</span><span class="step-label">Buscar</span></li>
+        <li data-step="review"><span class="step-circle">2</span><span class="step-label">Revisar</span></li>
+        <li data-step="enrich"><span class="step-circle">3</span><span class="step-label">Enriquecer</span></li>
+        <li data-step="notion"><span class="step-circle">4</span><span class="step-label">Notion</span></li>
+      </ol>
 
-      <section class="card">
-        <div class="card-title">Buscar negocios</div>
-        <span class="subtle tiny">Modo: Ahorro (fijo)</span>
-        <label>Localidad
-          <select id="localidad-select"></select>
-        </label>
-        <div class="btn-row">
-          <button id="btn-start" class="primary">Iniciar</button>
-          <button id="btn-stop" class="ghost" disabled>Parar</button>
-        </div>
-      </section>
+      <!-- Hero card (contextual next action) -->
+      <section id="hero-card" class="hero-card"></section>
 
-      <section class="card">
-        <div class="card-title">Filtros</div>
-        <label>Categoría
-          <select id="filter-category"><option value="">Todas</option></select>
-        </label>
-        <label>Localidad
-          <select id="filter-localidad"><option value="">Todas</option></select>
-        </label>
-        <input id="filter-text" type="text" placeholder="Buscar por nombre..." />
-      </section>
-
+      <!-- Stats chips (clickable filters) -->
       <section class="stats-row">
-        <div class="stat"><b id="count-total">0</b><span>totales</span></div>
-        <div class="stat"><b id="count-approved">0</b><span>aprobados</span></div>
-        <div class="stat hidden" id="filter-wrap"><b id="count-filtered">0</b><span>filtrados</span></div>
+        <button class="stat" data-filter="all" id="stat-total">
+          <b id="count-total">0</b>
+          <span>Totales</span>
+        </button>
+        <button class="stat" data-filter="approved" id="stat-approved">
+          <b id="count-approved">0</b>
+          <span>Aprobados</span>
+        </button>
+        <button class="stat" data-filter="notion" id="stat-notion">
+          <b id="count-notion">0</b>
+          <span>En Notion</span>
+        </button>
       </section>
 
-      <section class="card">
-        <div class="card-title">Acciones</div>
-        <button id="btn-review" class="primary">Revisar 1×1 locales</button>
-        <button id="btn-enrich" class="accent">Traer contacto → Notion</button>
-        <button id="btn-cleanup" class="ghost">Limpiar spam</button>
-        <div id="enrich-live" class="tiny subtle hidden"></div>
-        <div id="cleanup-live" class="tiny subtle hidden"></div>
-        <div class="tiny subtle" id="blacklist-info">Blacklist: 0 locales</div>
-      </section>
+      <!-- Filters -->
+      <details class="card filter-card">
+        <summary>
+          <span class="card-title">Filtros</span>
+          <span class="subtle tiny" id="filter-summary"></span>
+        </summary>
+        <div class="filter-body">
+          <label>Categoría
+            <select id="filter-category"><option value="">Todas</option></select>
+          </label>
+          <label>Localidad
+            <select id="filter-localidad"><option value="">Todas</option></select>
+          </label>
+          <input id="filter-text" type="text" placeholder="Buscar por nombre..." />
+          <div class="tiny subtle hidden" id="filter-wrap">
+            <span id="count-filtered">0</span> resultados en el filtro
+          </div>
+        </div>
+      </details>
 
-      <ul id="business-list"></ul>
+      <!-- Business list -->
+      <div class="list-container">
+        <ul id="business-list"></ul>
+        <div id="list-empty" class="empty-state hidden">
+          <div class="empty-icon"></div>
+          <div class="empty-title">Sin locales todavía</div>
+          <div class="empty-sub">Hacé click en una localidad del mapa o usá el hero card arriba para arrancar.</div>
+        </div>
+      </div>
     </aside>
 
+    <!-- Toast -->
     <div id="toast" class="toast hidden"></div>
 
+    <!-- Confirm modal -->
     <div id="confirm-modal" class="modal hidden">
       <div class="confirm-card">
         <div id="confirm-title" class="confirm-title">Confirmar</div>
@@ -120,6 +137,7 @@
       </div>
     </div>
 
+    <!-- Review modal -->
     <div id="review-modal" class="modal hidden">
       <div class="review-card">
         <header class="review-head">
@@ -128,10 +146,44 @@
         </header>
         <div id="review-body"></div>
         <footer class="review-actions">
-          <button id="review-reject" class="reject">✗ Eliminar (J)</button>
-          <button id="review-approve" class="approve">✓ Aprobar (L)</button>
+          <button id="review-reject" class="reject">Eliminar · J</button>
+          <button id="review-approve" class="approve">Aprobar · L</button>
         </footer>
-        <div class="tiny subtle" style="text-align:center;margin-top:10px">J=eliminar · L=aprobar · Esc cerrar</div>
+        <div class="tiny subtle" style="text-align:center;margin-top:10px">Teclado · J eliminar · L aprobar · Esc cerrar</div>
+      </div>
+    </div>
+
+    <!-- Settings / advanced modal -->
+    <div id="settings-modal" class="modal hidden">
+      <div class="settings-card">
+        <header class="review-head">
+          <h3>Opciones avanzadas</h3>
+          <button id="settings-close" class="tiny ghost">Cerrar (Esc)</button>
+        </header>
+
+        <section class="adv-section">
+          <div class="adv-row">
+            <div>
+              <div class="adv-title">Estado Google Places</div>
+              <div class="adv-sub">Bloqueá la API si querés pausar temporalmente todo consumo.</div>
+            </div>
+            <button id="btn-toggle-budget" class="ghost">Bloquear</button>
+          </div>
+          <div class="adv-row">
+            <div>
+              <div class="adv-title">Limpiar spam del cache</div>
+              <div class="adv-sub">Borra locales tipo pollerías, hoteles, bancos. Archiva en Notion si ya se exportaron.</div>
+              <div id="cleanup-live" class="tiny subtle hidden"></div>
+            </div>
+            <button id="btn-cleanup" class="ghost">Limpiar</button>
+          </div>
+          <div class="adv-row">
+            <div>
+              <div class="adv-title">Blacklist</div>
+              <div class="adv-sub" id="blacklist-info">Blacklist: 0 locales rechazados</div>
+            </div>
+          </div>
+        </section>
       </div>
     </div>
   </div>

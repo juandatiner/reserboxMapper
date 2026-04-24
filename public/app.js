@@ -1,3 +1,21 @@
+/* ---------- icon library (inline SVG strings, stroke-based) ---------- */
+const ICONS = {
+  search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>',
+  eye: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>',
+  check: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
+  phone: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
+  send: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2 11 13"/><path d="M22 2 15 22l-4-9-9-4z"/></svg>',
+  sparkle: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg>',
+  alert: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+  settings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>',
+  mapPin: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>',
+  stop: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="14" height="14" rx="2"/></svg>',
+  play: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>',
+  party: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01M22 8h.01M15 2h.01M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-1.5-.5c-.82-.27-1.72.23-1.93 1.07v0c-.21.85-1.11 1.35-1.93 1.07L15 14"/><path d="M13 7C9 7 5 10 5 14s4 7 8 7 8-3 8-7-4-7-8-7z"/></svg>'
+};
+
+/* ---------- state ---------- */
 const state = {
   businesses: {},
   markers: {},
@@ -6,8 +24,10 @@ const state = {
   budget: {},
   searching: false,
   mapsKey: null,
+  activeFilter: 'all',
   sectionsCollapsed: (() => { try { return JSON.parse(localStorage.getItem('sectionsCollapsed') || '{}'); } catch { return {}; } })()
 };
+
 function toggleSection(key) {
   state.sectionsCollapsed[key] = !state.sectionsCollapsed[key];
   localStorage.setItem('sectionsCollapsed', JSON.stringify(state.sectionsCollapsed));
@@ -21,11 +41,9 @@ const CATEGORY_COLORS = {
   lawyer: '#eab308', veterinary_care: '#f59e0b', photographer: '#fb923c', tattoo_parlor: '#78350f',
   default: '#94a3b8'
 };
-function colorFor(category) {
-  return CATEGORY_COLORS[category] || CATEGORY_COLORS.default;
-}
+function colorFor(category) { return CATEGORY_COLORS[category] || CATEGORY_COLORS.default; }
 
-// ---------- setup / config ----------
+/* ---------- setup / config ---------- */
 async function checkConfig() {
   const r = await fetch('/api/config/status').then(r => r.json());
   if (r.googleSet && r.notionSet) {
@@ -33,7 +51,7 @@ async function checkConfig() {
     document.getElementById('app').classList.remove('hidden');
     state.autoNotion = true;
     await initApp();
-    document.getElementById('queue-info').textContent = `Cola Notion: ${r.notionQueueSize || 0}`;
+    updateQueueInfo(r.notionQueueSize || 0);
   } else {
     document.getElementById('setup').classList.remove('hidden');
     document.getElementById('app').classList.add('hidden');
@@ -74,16 +92,18 @@ document.getElementById('btn-save').addEventListener('click', async () => {
   }
 });
 
-// ---------- main app ----------
+/* ---------- main app ---------- */
 let map;
 async function initApp() {
   map = L.map('map').setView([4.65, -74.1], 11);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '&copy; OpenStreetMap',
-    maxZoom: 19
+    attribution: '&copy; OpenStreetMap', maxZoom: 19
   }).addTo(map);
-
   addLegend();
+
+  // inject gear icon once
+  const gear = document.getElementById('btn-settings');
+  if (gear) gear.innerHTML = ICONS.settings;
 
   const [geo, progress, businessesArr, budget] = await Promise.all([
     fetch('/api/localidades').then(r => r.json()),
@@ -94,6 +114,7 @@ async function initApp() {
 
   state.progress = progress;
   state.budget = budget;
+  state.localidadesGeo = geo;
 
   drawLocalidades(geo);
   populateSelects(geo);
@@ -112,10 +133,10 @@ function addLegend() {
     const div = L.DomUtil.create('div', 'legend');
     div.innerHTML = `
       <div><b>Estado localidad</b></div>
-      <div><span class="swatch" style="background:#64748b"></span>Sin buscar</div>
+      <div><span class="swatch" style="background:#cbd1d9"></span>Sin buscar</div>
       <div><span class="swatch" style="background:#fbbf24"></span>En progreso</div>
-      <div><span class="swatch" style="background:#4ade80"></span>Completada</div>
-      <div style="margin-top:6px"><b>Pines por categoría</b></div>
+      <div><span class="swatch" style="background:#10b981"></span>Completada</div>
+      <div style="margin-top:8px"><b>Pines por categoría</b></div>
       <div><span class="swatch" style="background:#ec4899"></span>Belleza</div>
       <div><span class="swatch" style="background:#3b82f6"></span>Salud</div>
       <div><span class="swatch" style="background:#22c55e"></span>Fitness</div>
@@ -129,10 +150,11 @@ function addLegend() {
 function polygonStyle(nombre) {
   const p = state.progress[nombre];
   const status = p && p.status;
-  let color = '#64748b';
-  if (status === 'in_progress') color = '#fbbf24';
-  else if (status === 'done') color = '#4ade80';
-  return { color, weight: 1.5, fillColor: color, fillOpacity: 0.15 };
+  let color = '#cbd1d9';
+  let fillColor = '#9ba3ad';
+  if (status === 'in_progress') { color = '#fbbf24'; fillColor = '#fbbf24'; }
+  else if (status === 'done') { color = '#10b981'; fillColor = '#10b981'; }
+  return { color, weight: 1.5, fillColor, fillOpacity: 0.12 };
 }
 
 function drawLocalidades(geo) {
@@ -149,31 +171,24 @@ function drawLocalidades(geo) {
 }
 
 function refreshPolygonStyles() {
-  for (const [nombre, poly] of Object.entries(state.polygons)) {
-    poly.setStyle(polygonStyle(nombre));
-  }
+  for (const [nombre, poly] of Object.entries(state.polygons)) poly.setStyle(polygonStyle(nombre));
 }
 
 function populateSelects(geo) {
-  const sel = document.getElementById('localidad-select');
   const filt = document.getElementById('filter-localidad');
   for (const f of geo.features) {
     const n = f.properties.nombre;
-    sel.insertAdjacentHTML('beforeend', `<option value="${n}">${n}</option>`);
     filt.insertAdjacentHTML('beforeend', `<option value="${n}">${n}</option>`);
   }
 }
 
-// ---------- markers ----------
+/* ---------- markers ---------- */
 function addMarker(b) {
   if (!b.lat || !b.lng) return;
   if (state.markers[b.place_id]) return;
   const m = L.circleMarker([b.lat, b.lng], {
-    radius: 6,
-    color: colorFor(b.category),
-    fillColor: colorFor(b.category),
-    fillOpacity: 0.85,
-    weight: 1
+    radius: 6, color: colorFor(b.category), fillColor: colorFor(b.category),
+    fillOpacity: 0.85, weight: 1
   }).addTo(map);
   m.on('click', () => openSingleReview(b.place_id));
   state.markers[b.place_id] = m;
@@ -188,69 +203,23 @@ function openSingleReview(placeId) {
   renderReview();
 }
 
-function popupHtml(b) {
-  const status = b.reviewStatus === 'approved'
-    ? '<div style="color:#16a34a;font-weight:600;margin:4px 0">✓ Aprobado</div>'
-    : '';
-  let rich = '';
-  if (b.detailsFetched) {
-    const phone = b.formatted_phone_number ? `<div>📞 <b>${escapeHtml(b.formatted_phone_number)}</b></div>` : '';
-    const web = b.website ? `<div>🌐 <a href="${b.website}" target="_blank">${escapeHtml(b.website.replace(/^https?:\/\//,''))}</a></div>` : '';
-    const sum = b.editorial_summary ? `<div style="margin:6px 0;color:#555;font-style:italic">${escapeHtml(b.editorial_summary)}</div>` : '';
-    const hours = b.opening_hours?.weekday_text?.length
-      ? `<details style="margin-top:6px"><summary style="cursor:pointer">Horarios</summary><ul style="margin:4px 0 0 14px;padding:0;font-size:12px">${b.opening_hours.weekday_text.map(h => `<li>${escapeHtml(h)}</li>`).join('')}</ul></details>`
-      : '';
-    const reviews = (b.reviews || []).slice(0, 3).map(r => `
-      <div style="border-top:1px solid #eee;padding:6px 0;font-size:12px">
-        <b>${escapeHtml(r.author_name || 'Anónimo')}</b> — ⭐ ${r.rating}
-        <div style="color:#555">${escapeHtml((r.text || '').slice(0, 200))}${(r.text || '').length > 200 ? '...' : ''}</div>
-      </div>`).join('');
-    rich = `
-      ${sum}
-      ${phone}${web}
-      <div>📍 ${escapeHtml(b.formatted_address || '')}</div>
-      <div>⭐ ${b.rating ?? '-'} (${b.user_ratings_total || 0} reseñas)</div>
-      ${hours}
-      ${reviews ? `<div style="margin-top:8px"><b>Reseñas</b>${reviews}</div>` : ''}
-    `;
-  } else {
-    const embedSrc = state.mapsKey
-      ? `https://www.google.com/maps/embed/v1/place?key=${state.mapsKey}&q=place_id:${b.place_id}&zoom=17`
-      : null;
-    rich = `
-      <div>${escapeHtml(b.formatted_address || '')}</div>
-      <div>⭐ ${b.rating ?? '-'} (${b.user_ratings_total || 0})</div>
-      ${embedSrc ? `<iframe src="${embedSrc}" style="width:100%;height:520px;border:1px solid #ccc;border-radius:4px;margin-top:6px" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : ''}
-    `;
-  }
-  return `
-    <div style="width:560px">
-      <b style="font-size:14px">${escapeHtml(b.name)}</b>
-      <small style="color:#666"> — ${escapeHtml(b.category)} · ${escapeHtml(b.localidad || '')}</small>
-      ${status}
-      ${rich}
-      <div style="display:flex;gap:6px;margin-top:8px">
-        <button style="flex:1;background:#dc2626;color:white;border:none;padding:10px;border-radius:4px;cursor:pointer;font-weight:600" onclick="window.rejectOne('${b.place_id}')">✗ Eliminar</button>
-        <button style="flex:1;background:#16a34a;color:white;border:none;padding:10px;border-radius:4px;cursor:pointer;font-weight:600" onclick="window.approveOne('${b.place_id}')">✓ Aprobar</button>
-      </div>
-    </div>`;
-}
-
-
 function escapeHtml(s) {
   return (s || '').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
 
-// ---------- list / filters ----------
+/* ---------- filters + list ---------- */
 function filteredBusinesses() {
   const cat = document.getElementById('filter-category').value;
   const loc = document.getElementById('filter-localidad').value;
   const txt = document.getElementById('filter-text').value.toLowerCase().trim();
-  return Object.values(state.businesses).filter(b =>
+  const list = Object.values(state.businesses).filter(b =>
     (!cat || b.category === cat) &&
     (!loc || b.localidad === loc) &&
     (!txt || (b.name || '').toLowerCase().includes(txt))
   );
+  if (state.activeFilter === 'approved') return list.filter(b => b.reviewStatus === 'approved');
+  if (state.activeFilter === 'notion') return list.filter(b => b.notionPageId);
+  return list;
 }
 
 function refreshCategoryFilter() {
@@ -260,6 +229,16 @@ function refreshCategoryFilter() {
   for (const c of cats) {
     if (!existing.has(c)) sel.insertAdjacentHTML('beforeend', `<option value="${c}">${c}</option>`);
   }
+}
+
+function statusPill(b) {
+  const hasPhone = !!(b.formatted_phone_number || b.international_phone_number);
+  if (b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId && hasPhone) return '<span class="pill done">En Notion con teléfono</span>';
+  if (b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId) return '<span class="pill nophone">En Notion sin teléfono</span>';
+  if (b.reviewStatus === 'approved' && b.detailsFetched && !hasPhone) return '<span class="pill nophone">Sin teléfono · no enviado</span>';
+  if (b.reviewStatus === 'approved' && b.notionPageId) return '<span class="pill approved">Verificado · en Notion (falta detalles)</span>';
+  if (b.reviewStatus === 'approved') return '<span class="pill approved">Verificado · falta Notion</span>';
+  return '<span class="pill pending">Sin verificar</span>';
 }
 
 function buildListItem(b, opts = {}) {
@@ -273,22 +252,22 @@ function buildListItem(b, opts = {}) {
   if (fullyDone && hasPhoneLocal) li.classList.add('done-item');
   if (noPhoneDone) li.classList.add('nophone-item');
   if (isDup) li.classList.add('dup-item');
-  const badge = noPhoneDone
-    ? '<span style="color:#fbbf24">⚠</span> '
-    : (fullyDone ? '<span style="color:#38bdf8">📨</span> ' : (b.reviewStatus === 'approved' ? '<span style="color:#4ade80">✓</span> ' : ''));
+  const mark = noPhoneDone
+    ? `<span class="warn-mark">${ICONS.alert}</span>`
+    : (fullyDone ? `<span class="done-mark">${ICONS.send}</span>` : (b.reviewStatus === 'approved' ? `<span class="ok-mark">${ICONS.check}</span>` : ''));
   const phoneShown = b.formatted_phone_number || b.international_phone_number;
   li.innerHTML = `
-    <div class="bname">${badge}${escapeHtml(b.name)}</div>
-    <div>${statusPill(b)}${isDup ? ' <span class="pill dup">🔀 Posible duplicado</span>' : ''}</div>
+    <div class="bname">${mark}${escapeHtml(b.name)}</div>
+    <div>${statusPill(b)}${isDup ? ' <span class="pill dup">Posible duplicado</span>' : ''}</div>
     <div class="bmeta">${escapeHtml(b.category)} · ${escapeHtml(b.localidad || '')}</div>
-    <div class="bmeta">⭐ ${b.rating ?? '-'} (${b.user_ratings_total || 0}) ${phoneShown ? '· 📞 ' + escapeHtml(phoneShown) : '· <span style="color:#fbbf24">sin teléfono</span>'}</div>
-    ${b.formatted_address ? `<div class="bmeta">📍 ${escapeHtml(b.formatted_address)}</div>` : ''}
+    <div class="bmeta">★ ${b.rating ?? '-'} (${b.user_ratings_total || 0})${phoneShown ? ' · ' + escapeHtml(phoneShown) : ' · sin teléfono'}</div>
+    ${b.formatted_address ? `<div class="bmeta">${escapeHtml(b.formatted_address)}</div>` : ''}
     <div class="bactions">
       <a href="${b.url}" target="_blank">Maps</a>
       ${b.website ? `<a href="${b.website}" target="_blank">Web</a>` : ''}
       <button data-focus="${b.place_id}">Ver</button>
-      ${opts.quickAcceptDup ? `<button class="quick-ok" data-accept-dup="${b.place_id}" title="Aceptar: no es duplicado">✓</button>` : ''}
-      ${opts.quickDelete ? `<button class="quick-del" data-del="${b.place_id}" title="Eliminar rápido">✗</button>` : ''}
+      ${opts.quickAcceptDup ? `<button class="quick-ok" data-accept-dup="${b.place_id}" title="No es duplicado">✓</button>` : ''}
+      ${opts.quickDelete ? `<button class="quick-del" data-del="${b.place_id}" title="Eliminar">✗</button>` : ''}
     </div>
   `;
   return li;
@@ -311,7 +290,7 @@ function findDuplicateGroups(list) {
     if (p.length >= 7) (keyIdx.phone[p] = keyIdx.phone[p] || []).push(b.place_id);
   }
 
-  const reasons = {}; // placeId -> { name: Set, addr: Set, phone: Set }
+  const reasons = {};
   for (const k of ['name', 'addr', 'phone']) {
     for (const [val, ids] of Object.entries(keyIdx[k])) {
       if (ids.length > 1) {
@@ -343,16 +322,6 @@ function groupReasonsLabel(ids, reasons) {
   return Array.from(types).join(' · ') || 'coincidencia';
 }
 
-function statusPill(b) {
-  const hasPhone = !!(b.formatted_phone_number || b.international_phone_number);
-  if (b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId && hasPhone) return '<span class="pill done">📨 En Notion con teléfono</span>';
-  if (b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId) return '<span class="pill nophone">⚠ En Notion SIN teléfono</span>';
-  if (b.reviewStatus === 'approved' && b.detailsFetched && !hasPhone) return '<span class="pill nophone">⚠ Sin teléfono · NO enviado a Notion</span>';
-  if (b.reviewStatus === 'approved' && b.notionPageId) return '<span class="pill approved">✓ Verificado · en Notion (falta traer detalles)</span>';
-  if (b.reviewStatus === 'approved') return '<span class="pill approved">✓ Verificado · falta enviar a Notion</span>';
-  return '<span class="pill pending">○ Sin verificar</span>';
-}
-
 function renderSection(ul, key, title, items, headerClass, opts = {}) {
   if (!items.length) return;
   const collapsed = !!state.sectionsCollapsed[key];
@@ -373,11 +342,12 @@ function refreshList() {
   const dupIds = new Set();
   dupGroups.forEach(g => g.forEach(id => dupIds.add(id)));
   state._dupIds = dupIds;
-  // Sections computed over FULL list — items duplicados también aparecen en su sección semántica.
+
   const noPhone = list.filter(b => b.reviewStatus === 'approved' && b.detailsFetched && !hasPhone(b));
   const approvedPartial = list.filter(b => b.reviewStatus === 'approved' && !(b.detailsFetched && b.notionPageId) && !(b.detailsFetched && !hasPhone(b)));
   const done = list.filter(b => b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId && hasPhone(b));
   const pending = list.filter(b => b.reviewStatus !== 'approved');
+
   const ul = document.getElementById('business-list');
   ul.innerHTML = '';
 
@@ -385,7 +355,7 @@ function refreshList() {
     const collapsed = !!state.sectionsCollapsed['dup'];
     const h = document.createElement('li');
     h.className = 'list-section-header dup';
-    h.innerHTML = `<span class="caret">${collapsed ? '▸' : '▾'}</span> 🔀 Posibles duplicados — ${dupGroups.length} grupos · ${dupIds.size} locales`;
+    h.innerHTML = `<span class="caret">${collapsed ? '▸' : '▾'}</span> Posibles duplicados · ${dupGroups.length} grupos · ${dupIds.size} locales`;
     h.addEventListener('click', () => toggleSection('dup'));
     ul.appendChild(h);
     if (!collapsed) {
@@ -394,7 +364,7 @@ function refreshList() {
         gh.className = 'dup-group-header';
         gh.innerHTML = `
           <div class="dup-group-meta"><b>Grupo ${idx + 1}</b> · ${ids.length} locales · coincide por <i>${groupReasonsLabel(ids, dupReasons)}</i></div>
-          <button class="quick-ok dup-group-accept" data-accept-group="${ids.join(',')}" title="Aceptar grupo: no son duplicados">✓ Aceptar grupo</button>
+          <button class="quick-ok dup-group-accept" data-accept-group="${ids.join(',')}" title="No son duplicados">✓ Aceptar grupo</button>
         `;
         ul.appendChild(gh);
         for (const id of ids) {
@@ -405,32 +375,201 @@ function refreshList() {
     }
   }
 
-  renderSection(ul, 'approvedPartial', `✓ Verificados — falta enviar a Notion/traer contacto (${approvedPartial.length})`, approvedPartial, 'approved');
-  renderSection(ul, 'noPhone', `⚠ Segunda verificación — sin teléfono (no enviados a Notion) (${noPhone.length})`, noPhone, 'nophone', { quickDelete: true });
-  renderSection(ul, 'done', `✅ Listos — verificados + en Notion + con teléfono (${done.length})`, done, 'done');
-  renderSection(ul, 'pending', `○ Sin verificar (${pending.length})`, pending, '');
+  renderSection(ul, 'approvedPartial', `Verificados · falta Notion o contacto (${approvedPartial.length})`, approvedPartial, 'approved');
+  renderSection(ul, 'noPhone', `Segunda verificación · sin teléfono (${noPhone.length})`, noPhone, 'nophone', { quickDelete: true });
+  renderSection(ul, 'done', `Listos · en Notion con teléfono (${done.length})`, done, 'done');
+  renderSection(ul, 'pending', `Sin verificar (${pending.length})`, pending, '');
+
+  // stat counts
   const all = Object.values(state.businesses);
   document.getElementById('count-total').textContent = all.length;
   document.getElementById('count-approved').textContent = all.filter(b => b.reviewStatus === 'approved').length;
+  document.getElementById('count-notion').textContent = all.filter(b => b.notionPageId).length;
+
+  // filter summary
+  const cat = document.getElementById('filter-category').value;
+  const loc = document.getElementById('filter-localidad').value;
+  const txt = document.getElementById('filter-text').value.trim();
+  const hasFilter = !!(cat || loc || txt);
+  const summary = document.getElementById('filter-summary');
+  if (summary) summary.textContent = hasFilter ? `${list.length} resultados` : '';
   const wrap = document.getElementById('filter-wrap');
-  if (list.length !== all.length) {
+  if (hasFilter && list.length !== all.length) {
     wrap.classList.remove('hidden');
     document.getElementById('count-filtered').textContent = list.length;
   } else {
     wrap.classList.add('hidden');
   }
+
+  // empty state
+  const empty = document.getElementById('list-empty');
+  if (empty) empty.classList.toggle('hidden', list.length > 0);
+
+  // hero + steps always refresh alongside list
+  renderHero();
+  renderSteps();
 }
 
-// ---------- budget UI ----------
+/* ---------- step progress indicator ---------- */
+function renderSteps() {
+  const all = Object.values(state.businesses);
+  const pending = all.filter(b => b.reviewStatus !== 'approved').length;
+  const approved = all.filter(b => b.reviewStatus === 'approved').length;
+  const approvedNoDetails = all.filter(b => b.reviewStatus === 'approved' && !b.detailsFetched).length;
+  const inNotion = all.filter(b => b.notionPageId).length;
+
+  let current = 'search';
+  if (all.length > 0 && pending > 0) current = 'review';
+  else if (approved > 0 && approvedNoDetails > 0) current = 'enrich';
+  else if (approved > inNotion) current = 'notion';
+  else if (approved > 0 && approved === inNotion) current = 'notion';
+
+  const order = ['search', 'review', 'enrich', 'notion'];
+  const doneUpTo = {
+    search: all.length > 0,
+    review: all.length > 0 && pending === 0,
+    enrich: approved > 0 && approvedNoDetails === 0,
+    notion: approved > 0 && approved === inNotion
+  };
+
+  document.querySelectorAll('#step-progress li').forEach(li => {
+    const s = li.dataset.step;
+    li.classList.remove('active', 'done');
+    if (doneUpTo[s]) li.classList.add('done');
+    if (s === current && !doneUpTo[s]) li.classList.add('active');
+  });
+}
+
+/* ---------- hero card (contextual CTA) ---------- */
+function renderHero() {
+  const hero = document.getElementById('hero-card');
+  if (!hero) return;
+
+  const all = Object.values(state.businesses);
+  const pending = all.filter(b => b.reviewStatus !== 'approved');
+  const approved = all.filter(b => b.reviewStatus === 'approved');
+  const approvedNoDetails = approved.filter(b => !b.detailsFetched || !b.notionPageId);
+
+  // 1. Searching state
+  if (state.searching) {
+    const loc = state.currentLocalidad || '';
+    const prog = state.progress[loc];
+    const done = prog ? Object.keys(prog.searchedPoints || {}).length : 0;
+    const total = state.currentGridTotal || '?';
+    hero.classList.add('accent');
+    hero.innerHTML = `
+      <div class="hero-head">
+        <div class="hero-icon info-bg">${ICONS.search}</div>
+        <div class="hero-text">
+          <div class="hero-title">Buscando en ${escapeHtml(loc) || 'localidad'}...</div>
+          <div class="hero-sub">${done} / ${total} puntos procesados</div>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <button class="ghost" data-hero="stop">${ICONS.stop} Parar búsqueda</button>
+      </div>`;
+    return;
+  }
+
+  // 2. Pending review
+  if (pending.length > 0) {
+    hero.classList.remove('accent');
+    hero.classList.add('accent');
+    hero.innerHTML = `
+      <div class="hero-head">
+        <div class="hero-icon">${ICONS.eye}</div>
+        <div class="hero-text">
+          <div class="hero-title">${pending.length} ${pending.length === 1 ? 'local sin revisar' : 'locales sin revisar'}</div>
+          <div class="hero-sub">Revisalos 1 por 1 con el teclado. J = descartar · L = aprobar.</div>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <button class="primary" data-hero="review">${ICONS.play} Empezar revisión</button>
+        <button class="ghost" data-hero="search-more">${ICONS.mapPin} Buscar más</button>
+      </div>`;
+    return;
+  }
+
+  // 3. Approved without Notion or phone
+  if (approvedNoDetails.length > 0) {
+    const needDetails = approvedNoDetails.filter(b => !b.detailsFetched).length;
+    const cost = (needDetails * 0.017).toFixed(2);
+    hero.classList.add('accent');
+    hero.innerHTML = `
+      <div class="hero-head">
+        <div class="hero-icon accent-bg">${ICONS.phone}</div>
+        <div class="hero-text">
+          <div class="hero-title">${approvedNoDetails.length} aprobados listos para Notion</div>
+          <div class="hero-sub">Traigo tel + web de ${needDetails} locales (≈ $${cost}) y los envío a tu Notion.</div>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <button class="accent" data-hero="enrich">${ICONS.send} Enriquecer + enviar</button>
+        <button class="ghost" data-hero="search-more">${ICONS.mapPin} Buscar más</button>
+      </div>
+      <div id="enrich-live" class="tiny subtle hidden"></div>`;
+    return;
+  }
+
+  // 4. All done → prompt next localidad
+  if (all.length > 0) {
+    const geo = state.localidadesGeo;
+    const unfinished = (geo?.features || []).filter(f => {
+      const st = state.progress[f.properties.nombre]?.status;
+      return st !== 'done';
+    });
+    hero.classList.remove('accent');
+    hero.innerHTML = `
+      <div class="hero-head">
+        <div class="hero-icon accent-bg">${ICONS.party}</div>
+        <div class="hero-text">
+          <div class="hero-title">Todo al día</div>
+          <div class="hero-sub">${all.length} locales procesados. Probá otra localidad para seguir prospectando.</div>
+        </div>
+      </div>
+      <div class="hero-actions">
+        <select id="localidad-select">
+          ${unfinished.map(f => `<option value="${f.properties.nombre}">${f.properties.nombre}</option>`).join('')}
+        </select>
+        <button class="primary" data-hero="start">${ICONS.play} Iniciar</button>
+      </div>`;
+    return;
+  }
+
+  // 5. Empty state — first search
+  const geo = state.localidadesGeo;
+  hero.classList.add('accent');
+  hero.innerHTML = `
+    <div class="hero-head">
+      <div class="hero-icon">${ICONS.sparkle}</div>
+      <div class="hero-text">
+        <div class="hero-title">Arrancá tu primera búsqueda</div>
+        <div class="hero-sub">Elegí una localidad de Bogotá. La app escanea el grid y trae negocios tipo salones, gimnasios, clínicas, etc.</div>
+      </div>
+    </div>
+    <div class="hero-actions">
+      <select id="localidad-select">
+        ${(geo?.features || []).map(f => `<option value="${f.properties.nombre}">${f.properties.nombre}</option>`).join('')}
+      </select>
+      <button class="primary" data-hero="start">${ICONS.play} Iniciar</button>
+    </div>`;
+}
+
+/* ---------- budget / queue UI ---------- */
 function refreshBudget() {
   const b = state.budget;
+  const pill = document.getElementById('b-state-pill');
   const stateEl = document.getElementById('b-state');
   const toggleBtn = document.getElementById('btn-toggle-budget');
-  if (stateEl) {
-    stateEl.textContent = b.stopped ? '🛑 Bloqueado' : '✅ Activo';
-    stateEl.style.color = b.stopped ? '#f87171' : '#4ade80';
-  }
+  if (stateEl) stateEl.textContent = b.stopped ? 'Bloqueada' : 'Activa';
+  if (pill) pill.classList.toggle('stopped', !!b.stopped);
   if (toggleBtn) toggleBtn.textContent = b.stopped ? 'Desbloquear' : 'Bloquear';
+}
+
+function updateQueueInfo(size) {
+  const el = document.getElementById('queue-info');
+  if (!el) return;
+  el.textContent = size > 0 ? `Cola Notion: ${size}` : 'Listo';
 }
 
 async function refreshBlacklist() {
@@ -449,7 +588,7 @@ function refreshAll() {
   refreshPolygonStyles();
 }
 
-// ---------- SSE ----------
+/* ---------- SSE ---------- */
 function connectSSE() {
   const es = new EventSource('/api/stream');
   es.onmessage = e => {
@@ -468,35 +607,45 @@ function connectSSE() {
       case 'warn':
         state.budget = d.status;
         refreshBudget();
-        toast('⚠️ Llegaste al 80% del crédito. Cuidado.', 'warn', 8000);
+        toast('Llegaste al 80% del crédito. Cuidado.', 'warn', 8000);
         break;
       case 'stopped':
         state.budget = d.status;
         refreshBudget();
         state.searching = false;
         setStatus('err', `Parado: ${d.reason}. Encontrados: ${Object.keys(state.businesses).length}`);
-        toast(`🛑 Búsqueda detenida (${d.reason}). ${Object.keys(state.businesses).length} locales encontrados.`, 'err', 0);
+        toast(`Búsqueda detenida (${d.reason}). ${Object.keys(state.businesses).length} locales.`, 'err', 0);
+        renderHero();
         break;
       case 'search_start':
         state.searching = true;
+        state.currentLocalidad = d.localidad;
         state.progress[d.localidad] = state.progress[d.localidad] || { status: 'in_progress', searchedPoints: {} };
         state.progress[d.localidad].status = 'in_progress';
         refreshPolygonStyles();
         setStatus('running', `Buscando en ${d.localidad}...`);
+        renderHero();
         break;
       case 'grid':
-        setStatus('running', `${d.localidad}: ${d.points} puntos de grid`);
+        state.currentGridTotal = d.points;
+        setStatus('running', `${d.localidad}: ${d.points} puntos`);
+        renderHero();
         break;
       case 'progress':
-        setStatus('running', `${d.localidad}: ${d.done}/${d.total} puntos`);
+        setStatus('running', `${d.localidad}: ${d.done}/${d.total}`);
+        renderHero();
         break;
       case 'search_end':
         state.searching = false;
+        state.currentLocalidad = null;
+        state.currentGridTotal = null;
         state.progress[d.localidad] = state.progress[d.localidad] || {};
         state.progress[d.localidad].status = d.status;
         refreshPolygonStyles();
         setStatus(d.status === 'done' ? 'done' : 'idle', `${d.localidad}: ${d.status}`);
-        toast(`Búsqueda terminada en ${d.localidad} (${d.status})`, 'ok', 4000);
+        toast(`Búsqueda terminada en ${d.localidad}`, 'ok', 4000);
+        renderHero();
+        renderSteps();
         break;
       case 'error':
         toast('Error: ' + d.message, 'err', 5000);
@@ -508,10 +657,10 @@ function connectSSE() {
         }
         break;
       case 'notion_queue':
-        document.getElementById('queue-info').textContent = `Cola Notion: ${d.size}`;
+        updateQueueInfo(d.size || 0);
         break;
       case 'notion_updated':
-        toast('Notion actualizado con Details', 'ok', 2000);
+        toast('Notion actualizado', 'ok', 2000);
         break;
       case 'business_removed':
         if (state.markers[d.placeId]) {
@@ -525,39 +674,41 @@ function connectSSE() {
       case 'cleanup_start':
         document.getElementById('cleanup-live').classList.remove('hidden');
         document.getElementById('btn-cleanup').disabled = true;
-        document.getElementById('btn-cleanup').textContent = `Limpiando 0/${d.total}...`;
+        document.getElementById('btn-cleanup').textContent = `Limpiando 0/${d.total}`;
         break;
       case 'cleanup_progress':
         document.getElementById('btn-cleanup').textContent = `Limpiando ${d.current}/${d.total}`;
-        document.getElementById('cleanup-live').textContent = `✗ ${d.name}`;
+        document.getElementById('cleanup-live').textContent = `→ ${d.name}`;
         break;
       case 'cleanup_end':
         document.getElementById('btn-cleanup').disabled = false;
-        document.getElementById('btn-cleanup').textContent = 'Limpiar spam (polleria, hotel, etc.)';
+        document.getElementById('btn-cleanup').textContent = 'Limpiar';
         document.getElementById('cleanup-live').classList.add('hidden');
-        toast(`Limpieza: ${d.deleted} borrados, ${d.notionArchived} archivados en Notion, ${d.notionFailed} fallos`, 'ok', 6000);
+        toast(`Limpieza: ${d.deleted} borrados, ${d.notionArchived} archivados, ${d.notionFailed} fallos`, 'ok', 6000);
         break;
-      case 'purge_progress':
-        break;
+      case 'purge_progress': break;
       case 'purge_end':
         toast(`Archivados en Notion: ${d.ok} OK, ${d.fail} fallos`, 'ok', 5000);
         refreshList();
         break;
-      case 'enrich_start':
-        document.getElementById('btn-enrich').disabled = true;
-        document.getElementById('btn-enrich').textContent = `Procesando 0/${d.total}...`;
-        document.getElementById('enrich-live').classList.remove('hidden');
+      case 'enrich_start': {
+        const live = document.getElementById('enrich-live');
+        if (live) { live.classList.remove('hidden'); live.textContent = `Procesando 0/${d.total}`; }
         break;
-      case 'enrich_progress':
-        document.getElementById('btn-enrich').textContent = `Procesando ${d.current}/${d.total}`;
-        document.getElementById('enrich-live').textContent = `→ ${d.name}`;
+      }
+      case 'enrich_progress': {
+        const live = document.getElementById('enrich-live');
+        if (live) live.textContent = `Procesando ${d.current}/${d.total} · ${d.name}`;
         break;
-      case 'enrich_end':
-        document.getElementById('btn-enrich').disabled = false;
-        document.getElementById('btn-enrich').textContent = 'Traer contacto de aprobados → Notion';
-        document.getElementById('enrich-live').classList.add('hidden');
+      }
+      case 'enrich_end': {
+        const live = document.getElementById('enrich-live');
+        if (live) live.classList.add('hidden');
         toast(`Enrich: ${d.ok} OK, ${d.fail} fallos`, 'ok', 5000);
+        renderHero();
+        renderSteps();
         break;
+      }
       case 'notion_error':
         toast('Notion error: ' + d.message, 'err', 5000);
         break;
@@ -572,21 +723,52 @@ function connectSSE() {
   es.onerror = () => setStatus('err', 'Stream desconectado');
 }
 
-// ---------- UI wiring ----------
+/* ---------- UI wiring ---------- */
 function wireUI() {
-  document.getElementById('btn-start').addEventListener('click', () => {
-    const loc = document.getElementById('localidad-select').value;
-    startSearch(loc);
+  // hero card delegated clicks
+  document.getElementById('hero-card').addEventListener('click', async e => {
+    const btn = e.target.closest('[data-hero]');
+    if (!btn) return;
+    const action = btn.dataset.hero;
+    if (action === 'start' || action === 'search-more') {
+      const sel = document.getElementById('localidad-select');
+      const loc = sel?.value;
+      if (!loc) return;
+      startSearch(loc);
+    } else if (action === 'stop') {
+      await fetch('/api/search/stop', { method: 'POST' });
+      setStatus('idle', 'Detención pedida...');
+    } else if (action === 'review') {
+      startReview();
+    } else if (action === 'enrich') {
+      triggerEnrich();
+    }
   });
-  document.getElementById('btn-stop').addEventListener('click', async () => {
-    await fetch('/api/search/stop', { method: 'POST' });
-    setStatus('idle', 'Detención pedida...');
+
+  // stats chip filters
+  document.querySelectorAll('.stat').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const f = chip.dataset.filter;
+      state.activeFilter = state.activeFilter === f ? 'all' : f;
+      document.querySelectorAll('.stat').forEach(c => c.classList.toggle('active', c.dataset.filter === state.activeFilter && state.activeFilter !== 'all'));
+      refreshList();
+    });
   });
+
+  // settings modal open/close
+  document.getElementById('btn-settings').addEventListener('click', () => {
+    document.getElementById('settings-modal').classList.remove('hidden');
+  });
+  document.getElementById('settings-close').addEventListener('click', () => {
+    document.getElementById('settings-modal').classList.add('hidden');
+  });
+
+  // advanced actions (in settings modal)
   document.getElementById('btn-toggle-budget').addEventListener('click', async () => {
     const wasStopped = !!state.budget.stopped;
     const endpoint = wasStopped ? '/api/budget/unblock' : '/api/budget/block';
     const action = wasStopped ? 'Desbloquear' : 'Bloquear';
-    if (!(await confirmDialog(`¿${action} API?`, { title: action + ' API', okText: action, danger: !wasStopped }))) return;
+    if (!(await confirmDialog(`¿${action} la API?`, { title: action + ' API', okText: action, danger: !wasStopped }))) return;
     try {
       const res = await fetch(endpoint, { method: 'POST' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
@@ -595,65 +777,48 @@ function wireUI() {
       refreshBudget();
       toast(`API ${!wasStopped ? 'bloqueada' : 'desbloqueada'}`, 'ok', 2000);
     } catch (e) {
-      toast('Error: ' + e.message + ' (¿reiniciaste server?)', 'err', 5000);
+      toast('Error: ' + e.message, 'err', 5000);
     }
   });
+
   document.getElementById('btn-cleanup').addEventListener('click', async () => {
     const btn = document.getElementById('btn-cleanup');
     if (btn.disabled) return;
-    if (!(await confirmDialog('Borrar locales spam (pollerías, hoteles, bancos, restaurantes, etc.) del cache Y archivar sus páginas en Notion.', { title: 'Limpiar spam', okText: 'Borrar', danger: true }))) return;
+    if (!(await confirmDialog('Borra locales spam del cache Y archiva sus páginas en Notion.', { title: 'Limpiar spam', okText: 'Borrar', danger: true }))) return;
     btn.disabled = true;
-    btn.textContent = 'Iniciando limpieza...';
+    btn.textContent = 'Iniciando...';
     const r = await fetch('/api/cleanup/spam', { method: 'POST' });
     if (r.status === 409) {
       toast('Limpieza ya en curso', 'warn', 3000);
-      btn.disabled = false; btn.textContent = 'Limpiar spam (polleria, hotel, etc.)';
-      return;
+      btn.disabled = false; btn.textContent = 'Limpiar';
     }
   });
-  document.getElementById('btn-review').addEventListener('click', startReview);
-  document.getElementById('btn-enrich').addEventListener('click', async () => {
-    const btn = document.getElementById('btn-enrich');
-    if (btn.disabled) return;
-    const approved = Object.values(state.businesses).filter(b => b.reviewStatus === 'approved' && (!b.detailsFetched || !b.notionPageId));
-    if (!approved.length) return toast('Todos los aprobados ya tienen contacto + están en Notion', 'ok', 3000);
-    const needDetails = approved.filter(b => !b.detailsFetched).length;
-    const cost = (needDetails * 0.017).toFixed(2);
-    const msg = `Traer tel/web de ${needDetails} locales aprobados + enviar ${approved.length} a Notion.
-Costo: $${cost}`;
-    if (!(await confirmDialog(msg, { title: 'Enriquecer aprobados', okText: 'Continuar' }))) return;
-    const r = await fetch('/api/enrich/approved', { method: 'POST' });
-    if (r.status === 409) return toast('Ya corriendo', 'warn', 3000);
-    if (!r.ok) {
-      const j = await r.json().catch(() => ({}));
-      return toast(j.error || `Error ${r.status}`, 'err', 6000);
-    }
-  });
+
+  // review modal
   document.getElementById('review-close').addEventListener('click', closeReview);
   document.getElementById('review-reject').addEventListener('click', () => reviewAction('reject'));
   document.getElementById('review-approve').addEventListener('click', () => reviewAction('approve'));
   document.addEventListener('keydown', e => {
-    if (!reviewState.open) return;
-    if (e.key === 'Escape') closeReview();
-    else if (e.key === 'j' || e.key === 'J') reviewAction('reject');
-    else if (e.key === 'l' || e.key === 'L') reviewAction('approve');
+    if (reviewState.open) {
+      if (e.key === 'Escape') closeReview();
+      else if (e.key === 'j' || e.key === 'J') reviewAction('reject');
+      else if (e.key === 'l' || e.key === 'L') reviewAction('approve');
+    }
+    if (!document.getElementById('settings-modal').classList.contains('hidden') && e.key === 'Escape') {
+      document.getElementById('settings-modal').classList.add('hidden');
+    }
   });
+
+  // filter inputs
   for (const id of ['filter-category', 'filter-localidad', 'filter-text']) {
     document.getElementById(id).addEventListener('input', refreshList);
   }
 
+  // list delegated actions
   document.getElementById('business-list').addEventListener('click', async e => {
     const t = e.target;
-    if (t.dataset.del) {
-      e.stopPropagation();
-      await quickReject(t.dataset.del);
-      return;
-    }
-    if (t.dataset.acceptGroup) {
-      e.stopPropagation();
-      await acceptDuplicateGroup(t.dataset.acceptGroup.split(','));
-      return;
-    }
+    if (t.dataset.del) { e.stopPropagation(); await quickReject(t.dataset.del); return; }
+    if (t.dataset.acceptGroup) { e.stopPropagation(); await acceptDuplicateGroup(t.dataset.acceptGroup.split(',')); return; }
     if (t.dataset.focus) {
       const b = state.businesses[t.dataset.focus];
       if (b && b.lat && b.lng) {
@@ -664,6 +829,21 @@ Costo: $${cost}`;
   });
 }
 
+async function triggerEnrich() {
+  const approved = Object.values(state.businesses).filter(b => b.reviewStatus === 'approved' && (!b.detailsFetched || !b.notionPageId));
+  if (!approved.length) return toast('Todos los aprobados ya están listos', 'ok', 3000);
+  const needDetails = approved.filter(b => !b.detailsFetched).length;
+  const cost = (needDetails * 0.017).toFixed(2);
+  const msg = `Traer tel/web de ${needDetails} locales + enviar ${approved.length} a Notion.\nCosto estimado: $${cost}`;
+  if (!(await confirmDialog(msg, { title: 'Enriquecer aprobados', okText: 'Continuar' }))) return;
+  const r = await fetch('/api/enrich/approved', { method: 'POST' });
+  if (r.status === 409) return toast('Ya corriendo', 'warn', 3000);
+  if (!r.ok) {
+    const j = await r.json().catch(() => ({}));
+    return toast(j.error || `Error ${r.status}`, 'err', 6000);
+  }
+}
+
 async function startSearch(localidad) {
   const r = await fetch('/api/search/start', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -672,15 +852,16 @@ async function startSearch(localidad) {
   const data = await r.json();
   if (!r.ok) return toast(data.error || 'Error', 'err', 5000);
   state.searching = true;
+  state.currentLocalidad = localidad;
   setStatus('running', `Iniciando ${localidad}...`);
-  document.getElementById('btn-stop').disabled = false;
+  renderHero();
 }
 
 window.approveOne = async placeId => {
   await fetch(`/api/business/${placeId}/approve`, { method: 'POST' });
   if (state.businesses[placeId]) state.businesses[placeId].reviewStatus = 'approved';
   refreshList();
-  toast('✓ Aprobado', 'ok', 1500);
+  toast('Aprobado', 'ok', 1500);
 };
 
 async function quickReject(placeId) {
@@ -689,7 +870,7 @@ async function quickReject(placeId) {
   delete state.businesses[placeId];
   refreshList();
   refreshBlacklist();
-  toast('✗ Eliminado', 'ok', 1200);
+  toast('Eliminado', 'ok', 1200);
 }
 
 async function acceptDuplicateGroup(placeIds) {
@@ -699,30 +880,62 @@ async function acceptDuplicateGroup(placeIds) {
   });
   if (!r.ok) {
     const j = await r.json().catch(() => ({}));
-    return toast(j.error || `Error ${r.status} (¿reiniciaste server?)`, 'err', 4000);
+    return toast(j.error || `Error ${r.status}`, 'err', 4000);
   }
   for (const id of placeIds) {
     if (state.businesses[id]) state.businesses[id].notDuplicate = true;
   }
   refreshList();
-  toast(`✓ Grupo aceptado (${placeIds.length} locales)`, 'ok', 1800);
+  toast(`Grupo aceptado (${placeIds.length} locales)`, 'ok', 1800);
 }
 
 window.rejectOne = async placeId => {
-  if (!(await confirmDialog('Esto borra del cache, archiva la página en Notion si existe, y agrega el place_id a la blacklist para no volver a traerlo.', { title: 'Eliminar local', okText: 'Eliminar', danger: true }))) return;
+  if (!(await confirmDialog('Borra del cache, archiva la página de Notion si existe, y agrega el place_id a la blacklist.', { title: 'Eliminar local', okText: 'Eliminar', danger: true }))) return;
   await fetch(`/api/business/${placeId}`, { method: 'DELETE' });
   if (state.markers[placeId]) { map.removeLayer(state.markers[placeId]); delete state.markers[placeId]; }
   delete state.businesses[placeId];
   refreshList();
-  toast('✗ Eliminado', 'ok', 2000);
+  toast('Eliminado', 'ok', 2000);
 };
 
-// ---------- review mode ----------
+/* ---------- popup ---------- */
+function popupHtml(b) {
+  const status = b.reviewStatus === 'approved' ? '<div style="color:var(--accent);font-weight:600;margin:4px 0">Aprobado</div>' : '';
+  let rich = '';
+  if (b.detailsFetched) {
+    const phone = b.formatted_phone_number ? `<div>${escapeHtml(b.formatted_phone_number)}</div>` : '';
+    const web = b.website ? `<div><a href="${b.website}" target="_blank">${escapeHtml(b.website.replace(/^https?:\/\//, ''))}</a></div>` : '';
+    rich = `
+      ${phone}${web}
+      <div>${escapeHtml(b.formatted_address || '')}</div>
+      <div>★ ${b.rating ?? '-'} (${b.user_ratings_total || 0})</div>
+    `;
+  } else {
+    const embedSrc = state.mapsKey ? `https://www.google.com/maps/embed/v1/place?key=${state.mapsKey}&q=place_id:${b.place_id}&zoom=17` : null;
+    rich = `
+      <div>${escapeHtml(b.formatted_address || '')}</div>
+      <div>★ ${b.rating ?? '-'} (${b.user_ratings_total || 0})</div>
+      ${embedSrc ? `<iframe src="${embedSrc}" style="width:100%;height:520px;border:1px solid #e7e5e0;border-radius:8px;margin-top:6px" allowfullscreen loading="lazy"></iframe>` : ''}
+    `;
+  }
+  return `
+    <div style="width:560px">
+      <b style="font-size:14px">${escapeHtml(b.name)}</b>
+      <small style="color:#6b6b6b"> · ${escapeHtml(b.category)} · ${escapeHtml(b.localidad || '')}</small>
+      ${status}${rich}
+      <div style="display:flex;gap:6px;margin-top:10px">
+        <button style="flex:1;background:#dc2626;color:white;border:none;padding:10px;border-radius:8px;cursor:pointer;font-weight:700" onclick="window.rejectOne('${b.place_id}')">Eliminar</button>
+        <button style="flex:1;background:#2d6a4f;color:white;border:none;padding:10px;border-radius:8px;cursor:pointer;font-weight:700" onclick="window.approveOne('${b.place_id}')">Aprobar</button>
+      </div>
+    </div>`;
+}
+
+/* ---------- review mode ---------- */
 const reviewState = { open: false, queue: [], index: 0 };
 
 function startReview() {
   const candidates = filteredBusinesses().filter(b => b.reviewStatus !== 'approved');
-  if (!candidates.length) return toast('Nada para revisar en el filtro actual', 'ok');
+  if (!candidates.length) return toast('Nada para revisar', 'ok');
   reviewState.queue = candidates.map(b => b.place_id);
   reviewState.index = 0;
   reviewState.open = true;
@@ -748,35 +961,33 @@ function renderReview(mode = 'place') {
   const b = id && state.businesses[id];
   const body = document.getElementById('review-body');
   document.getElementById('review-counter').textContent = `${reviewState.index + 1} / ${reviewState.queue.length}`;
-  if (!b) { body.innerHTML = '<p style="color:#94a3b8">No hay más</p>'; return; }
+  if (!b) { body.innerHTML = '<p class="subtle">No hay más</p>'; return; }
   const src = buildEmbed(b, mode);
   body.innerHTML = `
     <h3>${escapeHtml(b.name)}</h3>
-    <div class="meta">${escapeHtml(b.category)} · ${escapeHtml(b.localidad || '')} · ⭐ ${b.rating ?? '-'} (${b.user_ratings_total || 0})</div>
+    <div class="meta">${escapeHtml(b.category)} · ${escapeHtml(b.localidad || '')} · ★ ${b.rating ?? '-'} (${b.user_ratings_total || 0})</div>
     <div class="meta">${escapeHtml(b.formatted_address || '')}</div>
-    ${b.reviewStatus === 'approved' ? '<div style="color:#4ade80;margin-top:4px">✓ Ya aprobado</div>' : ''}
+    ${b.reviewStatus === 'approved' ? '<div style="color:var(--accent);margin-top:4px;font-weight:600">Ya aprobado</div>' : ''}
     <div class="embed-modes">
-      <button data-mode="place" class="${mode==='place'?'active':''}">📍 Info local</button>
-      <button data-mode="streetview" class="${mode==='streetview'?'active':''}">👁 Street View</button>
-      <button data-mode="view" class="${mode==='view'?'active':''}">🛰 Satélite</button>
+      <button data-mode="place" class="${mode === 'place' ? 'active' : ''}">Info local</button>
+      <button data-mode="streetview" class="${mode === 'streetview' ? 'active' : ''}">Street View</button>
+      <button data-mode="view" class="${mode === 'view' ? 'active' : ''}">Satélite</button>
     </div>
-    ${src ? `<iframe class="review-embed" src="${src}" allowfullscreen loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>` : '<p style="color:#f87171">Sin API key</p>'}
+    ${src ? `<iframe class="review-embed" src="${src}" allowfullscreen loading="lazy"></iframe>` : '<p class="subtle">Sin API key</p>'}
     <div class="links">
-      <a href="${b.url}" target="_blank">Abrir en Google Maps ↗</a>
-      ${b.website ? `<a href="${b.website}" target="_blank">Web ↗</a>` : ''}
+      <a href="${b.url}" target="_blank">Abrir en Google Maps</a>
+      ${b.website ? `<a href="${b.website}" target="_blank">Web</a>` : ''}
     </div>
   `;
   body.querySelectorAll('.embed-modes button').forEach(btn => {
     btn.addEventListener('click', () => renderReview(btn.dataset.mode));
   });
-  if (b.lat && b.lng) {
-    map.setView([b.lat, b.lng], 17);
-  }
+  if (b.lat && b.lng) map.setView([b.lat, b.lng], 17);
 }
 
 window.focusMap = id => {
   const b = state.businesses[id];
-  if (b?.lat) { map.setView([b.lat, b.lng], 18); }
+  if (b?.lat) map.setView([b.lat, b.lng], 18);
 };
 
 async function reviewAction(kind) {
@@ -784,12 +995,12 @@ async function reviewAction(kind) {
   if (!id) return;
   if (kind === 'reject') {
     await fetch(`/api/business/${id}`, { method: 'DELETE' });
-    toast('✗ Eliminado', 'ok', 1200);
+    toast('Eliminado', 'ok', 1200);
   } else if (kind === 'approve') {
     await fetch(`/api/business/${id}/approve`, { method: 'POST' });
     if (state.businesses[id]) state.businesses[id].reviewStatus = 'approved';
     refreshList();
-    toast('✓ Aprobado', 'ok', 1200);
+    toast('Aprobado', 'ok', 1200);
   }
   reviewState.index++;
   if (reviewState.index >= reviewState.queue.length) {
@@ -801,11 +1012,11 @@ async function reviewAction(kind) {
   renderReview();
 }
 
+/* ---------- status + toast + confirm ---------- */
 function setStatus(kind, text) {
   const dot = document.getElementById('status-dot');
   dot.className = 'dot ' + kind;
   document.getElementById('status-text').textContent = text;
-  document.getElementById('btn-stop').disabled = !state.searching;
 }
 
 function confirmDialog(msg, { title = 'Confirmar', okText = 'Aceptar', cancelText = 'Cancelar', danger = false } = {}) {
