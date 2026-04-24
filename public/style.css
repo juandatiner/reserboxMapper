@@ -1186,23 +1186,99 @@ input[type=range]#filter-rating::-moz-range-thumb {
 }
 .note-meta { margin-bottom: 14px; }
 
-/* leaflet markercluster overrides — fresha look */
+/* ---------- custom pins (divIcon) ---------- */
+.rb-pin-wrap { background: none !important; border: none !important; }
+.rb-pin {
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: white;
+  padding: 3px;
+  display: grid; place-items: center;
+  box-shadow: 0 2px 6px rgba(17, 24, 39, .28);
+  cursor: pointer;
+  position: relative;
+  transition: transform .15s ease-out, box-shadow .15s;
+  border: 1.5px solid white;
+}
+.rb-pin:hover {
+  transform: scale(1.25) translateZ(0);
+  box-shadow: 0 4px 14px rgba(17, 24, 39, .4);
+  z-index: 1000;
+}
+.rb-pin-dot {
+  display: block;
+  width: 100%; height: 100%;
+  border-radius: 50%;
+  background: var(--pin-color);
+}
+
+/* approved → ring verde alrededor */
+.rb-pin.is-approved {
+  box-shadow: 0 0 0 2.5px var(--accent), 0 2px 6px rgba(17, 24, 39, .28);
+}
+.rb-pin.is-approved:hover {
+  box-shadow: 0 0 0 2.5px var(--accent), 0 4px 14px rgba(17, 24, 39, .4);
+}
+
+/* notion → check azul esquina */
+.rb-pin.is-notion::after {
+  content: '';
+  position: absolute;
+  top: -4px; right: -4px;
+  width: 12px; height: 12px;
+  background: var(--info);
+  border: 2px solid white;
+  border-radius: 50%;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, .3);
+}
+
+/* done (approved + notion + phone) → ring azul + check */
+.rb-pin.is-done {
+  box-shadow: 0 0 0 2.5px var(--info), 0 2px 6px rgba(17, 24, 39, .28);
+}
+.rb-pin.is-done:hover {
+  box-shadow: 0 0 0 2.5px var(--info), 0 4px 14px rgba(17, 24, 39, .4);
+}
+
+/* ---------- cluster badges (Fresha-style gradient) ---------- */
 .marker-cluster {
-  background: rgba(255, 56, 92, .2);
-  border: 2px solid rgba(255, 56, 92, .5);
+  background: transparent !important;
+  border: none !important;
 }
 .marker-cluster div {
-  background: var(--primary);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font) !important;
+  font-weight: 800;
   color: white;
-  font-weight: 700;
-  font-family: var(--font);
+  border: 3px solid white;
+  transition: transform .15s ease-out;
 }
-.marker-cluster-small { background: rgba(16, 185, 129, .2); border-color: rgba(16, 185, 129, .5); }
-.marker-cluster-small div { background: var(--success); }
-.marker-cluster-medium { background: rgba(245, 158, 11, .2); border-color: rgba(245, 158, 11, .5); }
-.marker-cluster-medium div { background: var(--warn); }
-.marker-cluster-large { background: rgba(220, 38, 38, .2); border-color: rgba(220, 38, 38, .5); }
-.marker-cluster-large div { background: var(--danger); }
+.marker-cluster:hover div { transform: scale(1.1); }
+.marker-cluster span {
+  display: inline-block;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.marker-cluster-small div {
+  width: 34px; height: 34px;
+  background: linear-gradient(135deg, #10b981, #34d399);
+  box-shadow: 0 4px 14px rgba(16, 185, 129, .4);
+  font-size: 12px;
+}
+.marker-cluster-medium div {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, #f59e0b, #fbbf24);
+  box-shadow: 0 4px 14px rgba(245, 158, 11, .45);
+  font-size: 13px;
+}
+.marker-cluster-large div {
+  width: 52px; height: 52px;
+  background: linear-gradient(135deg, #ff385c, #ff6b8a);
+  box-shadow: 0 6px 18px rgba(255, 56, 92, .5);
+  font-size: 14px;
+  letter-spacing: -.02em;
+}
 
 /* ---------- responsive breakpoints ---------- */
 

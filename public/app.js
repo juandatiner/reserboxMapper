@@ -223,16 +223,34 @@ function populateSelects(geo) {
 }
 
 /* ---------- markers ---------- */
+/* ---------- marker rendering (Fresha-style pins) ---------- */
+function pinIcon(b) {
+  const color = colorFor(b.category);
+  const classes = ['rb-pin'];
+  if (b.reviewStatus === 'approved') classes.push('is-approved');
+  if (b.notionPageId) classes.push('is-notion');
+  if (b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId && (b.formatted_phone_number || b.international_phone_number)) classes.push('is-done');
+  return L.divIcon({
+    className: 'rb-pin-wrap',
+    html: `<div class="${classes.join(' ')}" style="--pin-color:${color}"><span class="rb-pin-dot"></span></div>`,
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+}
+
 function addMarker(b) {
   if (!b.lat || !b.lng) return;
-  if (state.markers[b.place_id]) return;
-  const m = L.circleMarker([b.lat, b.lng], {
-    radius: 6, color: colorFor(b.category), fillColor: colorFor(b.category),
-    fillOpacity: 0.85, weight: 1
-  });
+  if (state.markers[b.place_id]) { updateMarkerForBusiness(b); return; }
+  const m = L.marker([b.lat, b.lng], { icon: pinIcon(b) });
   m.on('click', () => openSingleReview(b.place_id));
   state.markers[b.place_id] = m;
   if (state.cluster) state.cluster.addLayer(m); else m.addTo(map);
+}
+
+function updateMarkerForBusiness(b) {
+  const m = state.markers[b.place_id];
+  if (!m) return;
+  m.setIcon(pinIcon(b));
 }
 
 function removeMarker(placeId) {
@@ -733,7 +751,8 @@ function connectSSE() {
     switch (d.type) {
       case 'business':
         state.businesses[d.business.place_id] = d.business;
-        addMarker(d.business);
+        if (state.markers[d.business.place_id]) updateMarkerForBusiness(d.business);
+        else addMarker(d.business);
         refreshCategoryFilter();
         refreshList();
         break;
@@ -790,6 +809,7 @@ function connectSSE() {
       case 'notion_exported':
         if (state.businesses[d.placeId]) {
           state.businesses[d.placeId].notionPageId = d.pageId;
+          updateMarkerForBusiness(state.businesses[d.placeId]);
           refreshList();
         }
         break;
@@ -1276,7 +1296,10 @@ async function startSearch(localidad) {
 
 window.approveOne = async placeId => {
   await fetch(`/api/business/${placeId}/approve`, { method: 'POST' });
-  if (state.businesses[placeId]) state.businesses[placeId].reviewStatus = 'approved';
+  if (state.businesses[placeId]) {
+    state.businesses[placeId].reviewStatus = 'approved';
+    updateMarkerForBusiness(state.businesses[placeId]);
+  }
   refreshList();
   toast('Aprobado', 'ok', 1500);
 };
@@ -1415,7 +1438,10 @@ async function reviewAction(kind) {
     toast('Eliminado', 'ok', 1200);
   } else if (kind === 'approve') {
     await fetch(`/api/business/${id}/approve`, { method: 'POST' });
-    if (state.businesses[id]) state.businesses[id].reviewStatus = 'approved';
+    if (state.businesses[id]) {
+      state.businesses[id].reviewStatus = 'approved';
+      updateMarkerForBusiness(state.businesses[id]);
+    }
     refreshList();
     toast('Aprobado', 'ok', 1200);
   }
