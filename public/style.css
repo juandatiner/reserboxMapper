@@ -58,11 +58,11 @@ h3 { font-size: 15px; font-weight: 700; margin: 0; letter-spacing: -.005em; }
 .hint { color: var(--text-muted); font-size: 13px; margin: 8px 0 20px; }
 
 /* ---------- brand ---------- */
-.brand-block { display: flex; align-items: center; gap: 12px; }
+.brand-block { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .brand-block.compact { gap: 10px; width: 100%; }
-.brand-text { flex: 1; min-width: 0; }
-.brand-text h2 { line-height: 1.2; }
-.brand-text p { margin: 1px 0 0; font-size: 11px; }
+.brand-text { flex: 1; min-width: 0; overflow: hidden; }
+.brand-text h2 { line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.brand-text p { margin: 1px 0 0; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .brand-logo {
   width: 38px; height: 38px;
   background: linear-gradient(135deg, var(--primary), #ff6b8a);
@@ -276,17 +276,13 @@ h3 { font-size: 15px; font-weight: 700; margin: 0; letter-spacing: -.005em; }
 .hero-icon.accent-bg { background: var(--accent-soft); color: var(--accent); }
 .hero-icon.warn-bg { background: var(--warn-soft); color: var(--warn); }
 .hero-icon.info-bg { background: var(--info-soft); color: var(--info); }
-.hero-text { flex: 1; min-width: 0; }
+.hero-text { flex: 1; min-width: 0; overflow-wrap: break-word; }
 .hero-title { font-size: 15px; font-weight: 700; color: var(--text); line-height: 1.3; letter-spacing: -.005em; }
 .hero-sub { font-size: 12px; color: var(--text-muted); margin-top: 3px; line-height: 1.45; }
 .hero-actions { display: flex; gap: 8px; flex-wrap: wrap; }
-.hero-actions > * { flex: 1; min-width: 0; }
-.hero-actions select {
-  flex: 2;
-}
-.hero-actions button {
-  white-space: nowrap;
-}
+.hero-actions > * { flex: 1 1 140px; min-width: 0; }
+.hero-actions select { flex: 2 1 160px; }
+.hero-actions button { white-space: nowrap; }
 
 /* ---------- cards (generic) ---------- */
 .card {
@@ -549,8 +545,11 @@ button svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; }
   margin-bottom: 4px;
   color: var(--text);
   display: flex; align-items: center; gap: 6px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 #business-list .bname svg { width: 14px; height: 14px; flex-shrink: 0; }
+#business-list .bmeta { overflow-wrap: anywhere; }
 #business-list .bname .done-mark { color: var(--info); }
 #business-list .bname .warn-mark { color: var(--warn); }
 #business-list .bname .ok-mark { color: var(--accent); }
@@ -820,17 +819,101 @@ button svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; }
 .adv-title { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 3px; }
 .adv-sub { font-size: 12px; color: var(--text-muted); line-height: 1.45; }
 
-/* ---------- mobile ---------- */
-@media (max-width: 900px) {
+/* ---------- responsive breakpoints ---------- */
+
+/* Default (≥1200px): sidebar 420px */
+
+/* Medium desktop (1024–1199px): narrower sidebar */
+@media (max-width: 1199px) {
+  #app { grid-template-columns: 1fr 380px; }
+  #sidebar { padding: 16px; }
+  .step-progress li .step-label { font-size: 10px; }
+}
+
+/* Tablet landscape / small desktop (768–1023px): tight sidebar */
+@media (max-width: 1023px) {
+  #app { grid-template-columns: 1fr 340px; }
+  #sidebar { padding: 14px; gap: 12px; }
+  .hero-card { padding: 14px; gap: 10px; }
+  .brand-logo { width: 34px; height: 34px; font-size: 15px; }
+  .brand-block.compact .brand-logo { width: 32px; height: 32px; font-size: 14px; border-radius: 10px; }
+  .stat { padding: 10px 6px; }
+  .stat b { font-size: 20px; }
+  .review-embed { min-height: 360px; }
+}
+
+/* Mobile / tablet portrait (<768px): stacked layout */
+@media (max-width: 767px) {
   #app {
     grid-template-columns: 1fr;
-    grid-template-rows: 45vh 1fr;
+    grid-template-rows: 50vh 1fr;
   }
   #sidebar {
     border-left: none;
     border-top: 1px solid var(--border);
     padding: 14px;
+    gap: 12px;
   }
-  .brand-logo { width: 34px; height: 34px; font-size: 15px; }
-  .step-progress li .step-label { font-size: 10px; }
+  .step-progress { padding: 10px 6px; }
+  .step-progress li .step-label { display: none; }
+  .step-progress li + li::before { top: 13px; left: calc(-50% + 13px); right: calc(50% + 13px); }
+  .hero-actions { flex-direction: column; }
+  .hero-actions > * { flex: 1 1 auto; width: 100%; }
+  .hero-actions select { flex: 1 1 auto; }
+  .modal { padding: 12px; }
+  .settings-card, .review-card, .confirm-card { padding: 20px; border-radius: 16px; }
+  .review-embed { height: 45vh; min-height: 280px; }
+  .review-actions button { padding: 12px; font-size: 13px; }
+  .embed-modes { flex-wrap: wrap; }
+  .embed-modes button { flex: 1 1 100px; font-size: 11px; }
+  .adv-row { flex-direction: column; align-items: stretch; gap: 10px; }
+  .adv-row button { align-self: flex-start; }
+  .sidebar-header { padding-bottom: 12px; gap: 10px; }
+  .header-pills { gap: 6px; }
+  .status-row, .budget-pill { font-size: 11px; padding: 5px 10px; }
+}
+
+/* Small mobile (<480px): compact everything */
+@media (max-width: 479px) {
+  #app { grid-template-rows: 42vh 1fr; }
+  #sidebar { padding: 12px; gap: 10px; }
+  h1 { font-size: 19px; }
+  h2 { font-size: 14px; }
+  h3 { font-size: 14px; }
+  .brand-logo { width: 32px; height: 32px; font-size: 14px; }
+  .brand-block.compact { gap: 8px; }
+  .brand-block.compact .brand-logo { width: 30px; height: 30px; font-size: 13px; }
+  .brand-text h2 { font-size: 14px; }
+  .stats-row { gap: 6px; }
+  .stat { padding: 10px 4px; }
+  .stat b { font-size: 18px; }
+  .stat span { font-size: 9px; letter-spacing: .04em; }
+  .hero-card { padding: 12px; min-height: 0; }
+  .hero-head { gap: 10px; }
+  .hero-icon { width: 36px; height: 36px; border-radius: 10px; }
+  .hero-icon svg { width: 18px; height: 18px; }
+  .hero-title { font-size: 14px; }
+  .hero-sub { font-size: 11px; }
+  button { padding: 9px 14px; font-size: 12px; }
+  button.tiny { font-size: 10px; padding: 5px 8px; }
+  select, input[type=text] { padding: 9px 10px; font-size: 12px; }
+  .toast { bottom: 14px; max-width: 92vw; padding: 12px 16px; font-size: 12px; }
+  .setup-card { padding: 26px 20px; border-radius: 16px; }
+  .confirm-card, .review-card, .settings-card { padding: 18px; border-radius: 14px; }
+  .confirm-actions { flex-direction: column-reverse; gap: 8px; }
+  .confirm-actions button { min-width: 0; width: 100%; }
+  .legend { padding: 8px 10px; font-size: 11px; max-width: 180px; }
+  .empty-state { padding: 24px 14px; }
+  #business-list li { padding: 10px; }
+  #business-list .bname { font-size: 12px; }
+  #business-list .bmeta { font-size: 10px; }
+}
+
+/* Extra tiny (<360px): emergency squeeze */
+@media (max-width: 359px) {
+  .stat span { display: none; }
+  .stat { padding: 8px 2px; }
+  .stat b { font-size: 17px; }
+  .step-progress { padding: 8px 4px; }
+  .step-circle { width: 22px; height: 22px; font-size: 10px; border-width: 2px; }
 }
