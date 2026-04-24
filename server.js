@@ -408,7 +408,7 @@ function normalizeBusiness(p, sourceCategory) {
   };
 }
 
-async function searchLocalidad(localidadName) {
+async function searchLocalidad(localidadName, opts = {}) {
   const feature = localidadesGeo.features.find(f => f.properties.nombre === localidadName);
   if (!feature) throw new Error('localidad_not_found');
 
@@ -424,12 +424,22 @@ async function searchLocalidad(localidadName) {
   const grid = buildGrid(feature, preset.step);
   broadcast({ type: 'grid', localidad: localidadName, points: grid.length, mode: settings.searchMode });
 
+  // Selección de types: si el cliente manda lista, usar eso (filtrada a types válidos).
+  // Si manda array vacío o no lo manda, usar todos los defaults.
+  const selectedTypes = Array.isArray(opts.types) && opts.types.length
+    ? opts.types.filter(t => PLACE_TYPES.includes(t))
+    : PLACE_TYPES;
+
   let keywordsToUse = [];
-  if (preset.useKeywords === true) keywordsToUse = KEYWORD_QUERIES;
-  else if (preset.useKeywords === 'core') keywordsToUse = CORE_KEYWORDS;
+  // Si el usuario filtró a types específicos, saltamos keywords (búsqueda enfocada).
+  const userFiltered = Array.isArray(opts.types) && opts.types.length > 0;
+  if (!userFiltered) {
+    if (preset.useKeywords === true) keywordsToUse = KEYWORD_QUERIES;
+    else if (preset.useKeywords === 'core') keywordsToUse = CORE_KEYWORDS;
+  }
 
   const categories = [
-    ...PLACE_TYPES.map(t => ({ kind: 'type', value: t })),
+    ...selectedTypes.map(t => ({ kind: 'type', value: t })),
     ...keywordsToUse.map(k => ({ kind: 'keyword', value: k }))
   ];
 
@@ -1115,10 +1125,64 @@ app.post('/api/search/start', async (req, res) => {
   if (searchState.running) return res.status(409).json({ error: 'Búsqueda ya en curso', current: searchState.currentLocalidad });
   if (budget.stopped) return res.status(402).json({ error: 'Presupuesto detenido. Reseteá si querés continuar.' });
   if (!process.env.GOOGLE_PLACES_API_KEY) return res.status(400).json({ error: 'Sin Google API key' });
-  const { localidad } = req.body;
+  const { localidad, types } = req.body;
   if (!localidad) return res.status(400).json({ error: 'Falta localidad' });
-  res.json({ ok: true, localidad });
-  searchLocalidad(localidad).catch(e => broadcast({ type: 'error', message: e.message }));
+  res.json({ ok: true, localidad, types: Array.isArray(types) ? types : null });
+  searchLocalidad(localidad, { types }).catch(e => broadcast({ type: 'error', message: e.message }));
+});
+
+// Preview / simulación de costo antes de correr. No gasta cuota Google.
+app.post('/api/search/preview', (req, res) => {
+  const { localidad, types, mode } = req.body || {};
+  const feature = localidadesGeo.features.find(f => f.properties.nombre === localidad);
+  if (!feature) return res.status(400).json({ error: 'Localidad no encontrada' });
+  const presetKey = mode && SEARCH_PRESETS[mode] ? mode : (settings.searchMode || 'economy');
+  const preset = SEARCH_PRESETS[presetKey];
+  const grid = buildGrid(feature, preset.step);
+
+  const userFiltered = Array.isArray(types) && types.length > 0;
+  const selectedTypes = userFiltered ? types.filter(t => PLACE_TYPES.includes(t)) : PLACE_TYPES;
+  let keywords = [];
+  if (!userFiltered) {
+    if (preset.useKeywords === true) keywords = KEYWORD_QUERIES;
+    else if (preset.useKeywords === 'core') keywords = CORE_KEYWORDS;
+  }
+  const categoriesCount = selectedTypes.length + keywords.length;
+
+  // Cuántos puntos ya están buscados → no se volverán a consultar
+  const done = Object.keys(progress[localidad]?.searchedPoints || {}).length;
+  const pending = Math.max(0, grid.length - done);
+
+  // Cada punto × cada categoría = 1 Nearby request (página 1).
+  // Para presets con maxPages > 1 asumimos factor 1.3 del peor caso (la 2da página no siempre existe).
+  const nearbyMax = pending * categoriesCount * preset.maxPages;
+  const nearbyTypical = preset.maxPages > 1
+    ? Math.min(nearbyMax, Math.round(pending * categoriesCount * 1.3))
+    : nearbyMax;
+  const costTypical = +(nearbyTypical * COST_NEARBY).toFixed(2);
+  const costMax = +(nearbyMax * COST_NEARBY).toFixed(2);
+
+  const b = budgetStatus();
+  res.json({
+    localidad,
+    preset: presetKey,
+    gridTotal: grid.length,
+    gridDone: done,
+    gridPending: pending,
+    selectedTypes,
+    keywordCount: keywords.length,
+    categoriesCount,
+    nearbyTypical,
+    nearbyMax,
+    costTypical,
+    costMax,
+    currentCost: b.cost,
+    remaining: +(b.freeCredit - b.cost).toFixed(2),
+    freeCredit: b.freeCredit,
+    stopped: b.stopped,
+    costPerNearby: COST_NEARBY,
+    costPerDetails: COST_DETAILS
+  });
 });
 
 app.post('/api/search/stop', (req, res) => {

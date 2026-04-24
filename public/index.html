@@ -91,10 +91,32 @@
         </button>
       </section>
 
+      <!-- Quick cluster chips -->
+      <div id="cluster-chips" class="cluster-chips"></div>
+
+      <!-- Quick toggles -->
+      <div class="quick-toggles">
+        <label class="toggle-chip">
+          <input type="checkbox" id="flt-top" />
+          <span>Top prospects</span>
+          <small>★ ≥4 · 30+ reseñas</small>
+        </label>
+        <label class="toggle-chip">
+          <input type="checkbox" id="flt-phone" />
+          <span>Con teléfono</span>
+          <small>contactables</small>
+        </label>
+        <label class="toggle-chip">
+          <input type="checkbox" id="flt-hideclosed" checked />
+          <span>Ocultar cerrados</span>
+          <small>CLOSED_TEMPORARILY</small>
+        </label>
+      </div>
+
       <!-- Filters -->
       <details class="card filter-card">
         <summary>
-          <span class="card-title">Filtros</span>
+          <span class="card-title">Filtros avanzados</span>
           <span class="subtle tiny" id="filter-summary"></span>
         </summary>
         <div class="filter-body">
@@ -105,6 +127,22 @@
             <select id="filter-localidad"><option value="">Todas</option></select>
           </label>
           <input id="filter-text" type="text" placeholder="Buscar por nombre..." />
+          <label>Rating mínimo
+            <select id="filter-rating">
+              <option value="0">Cualquiera</option>
+              <option value="3.5">3.5 ⭐</option>
+              <option value="4.0">4.0 ⭐</option>
+              <option value="4.5">4.5 ⭐</option>
+            </select>
+          </label>
+          <label>Reseñas mínimas
+            <select id="filter-reviews">
+              <option value="0">Cualquiera</option>
+              <option value="10">10+</option>
+              <option value="30">30+</option>
+              <option value="100">100+</option>
+            </select>
+          </label>
           <div class="tiny subtle hidden" id="filter-wrap">
             <span id="count-filtered">0</span> resultados en el filtro
           </div>
@@ -150,6 +188,66 @@
           <button id="review-approve" class="approve">Aprobar · L</button>
         </footer>
         <div class="tiny subtle" style="text-align:center;margin-top:10px">Teclado · J eliminar · L aprobar · Esc cerrar</div>
+      </div>
+    </div>
+
+    <!-- Search builder modal -->
+    <div id="search-modal" class="modal hidden">
+      <div class="search-card">
+        <header class="review-head">
+          <h3>Armar búsqueda</h3>
+          <button id="search-close" class="tiny ghost">Cerrar (Esc)</button>
+        </header>
+
+        <div class="sb-grid">
+          <label>Localidad
+            <select id="sb-localidad"></select>
+          </label>
+
+          <div class="sb-section">
+            <div class="sb-section-title">Profundidad</div>
+            <div class="sb-preset-row">
+              <label class="sb-radio">
+                <input type="radio" name="sb-preset" value="economy" checked />
+                <div class="sb-radio-body"><b>Ahorro</b><span>grid 1000m · 1 página</span></div>
+              </label>
+              <label class="sb-radio">
+                <input type="radio" name="sb-preset" value="balanced" />
+                <div class="sb-radio-body"><b>Balanceado</b><span>grid 800m · 2 páginas</span></div>
+              </label>
+              <label class="sb-radio">
+                <input type="radio" name="sb-preset" value="complete" />
+                <div class="sb-radio-body"><b>Completo</b><span>grid 600m · 3 páginas</span></div>
+              </label>
+            </div>
+          </div>
+
+          <div class="sb-section">
+            <div class="sb-section-title">
+              Categorías
+              <div class="sb-section-actions">
+                <button type="button" id="sb-all" class="tiny ghost">Todas</button>
+                <button type="button" id="sb-none" class="tiny ghost">Ninguna</button>
+              </div>
+            </div>
+            <div id="sb-clusters" class="sb-clusters"></div>
+          </div>
+
+          <div class="sb-section">
+            <div class="sb-section-title">Simulación de costo</div>
+            <div id="sb-preview" class="sb-preview">
+              <div class="sb-preview-loading">Calculando...</div>
+            </div>
+            <div class="sb-disclaimer">
+              <b>Solo se paga si corrés la búsqueda.</b> Google cobra $0.032 por cada Nearby Search y $0.017 por cada Place Details. Tenés $200/mes de crédito gratis que se renueva cada mes. Si llegás al 95% del crédito la app frena sola.
+            </div>
+          </div>
+        </div>
+
+        <footer class="sb-actions">
+          <button type="button" id="sb-cancel" class="ghost">Cancelar</button>
+          <button type="button" id="sb-start" class="primary">Iniciar búsqueda</button>
+        </footer>
       </div>
     </div>
 

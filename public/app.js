@@ -15,6 +15,28 @@ const ICONS = {
   party: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M5.8 11.3 2 22l10.7-3.79"/><path d="M4 3h.01M22 8h.01M15 2h.01M22 20h.01"/><path d="m22 2-2.24.75a2.9 2.9 0 0 0-1.96 3.12v0c.1.86-.57 1.63-1.45 1.63h-.38c-.86 0-1.6.6-1.76 1.44L14 10"/><path d="m22 13-1.5-.5c-.82-.27-1.72.23-1.93 1.07v0c-.21.85-1.11 1.35-1.93 1.07L15 14"/><path d="M13 7C9 7 5 10 5 14s4 7 8 7 8-3 8-7-4-7-8-7z"/></svg>'
 };
 
+/* ---------- category clusters ---------- */
+const CATEGORY_CLUSTERS = [
+  { id: 'beauty',  label: 'Belleza',    types: ['hair_salon','beauty_salon','barber','spa','nail_salon'] },
+  { id: 'health',  label: 'Salud',      types: ['doctor','clinic','dentist','physiotherapist'] },
+  { id: 'fitness', label: 'Fitness',    types: ['gym'] },
+  { id: 'pro',     label: 'Servicios',  types: ['lawyer','photographer'] },
+  { id: 'pets',    label: 'Mascotas',   types: ['veterinary_care'] },
+  { id: 'other',   label: 'Otros',      types: ['tattoo_parlor'] }
+];
+const TYPE_LABELS = {
+  hair_salon: 'Peluquería', beauty_salon: 'Salón belleza', barber: 'Barbería', spa: 'Spa', nail_salon: 'Uñas',
+  doctor: 'Médico', clinic: 'Clínica', dentist: 'Odontólogo', physiotherapist: 'Fisio',
+  gym: 'Gimnasio',
+  lawyer: 'Abogado', photographer: 'Fotógrafo',
+  veterinary_care: 'Veterinaria', tattoo_parlor: 'Tatuajes'
+};
+function clusterOfType(type) {
+  for (const c of CATEGORY_CLUSTERS) if (c.types.includes(type)) return c.id;
+  return 'other';
+}
+function typeLabel(t) { return TYPE_LABELS[t] || t; }
+
 /* ---------- state ---------- */
 const state = {
   businesses: {},
@@ -24,7 +46,14 @@ const state = {
   budget: {},
   searching: false,
   mapsKey: null,
-  activeFilter: 'all',
+  activeFilter: 'all',           // stats chip: all | approved | notion
+  activeCluster: null,            // cluster id | null
+  topOnly: false,                 // rating>=4 && reviews>=30
+  withPhoneOnly: false,
+  hideClosed: true,               // hide CLOSED_TEMPORARILY por default
+  ratingMin: 0,
+  reviewsMin: 0,
+  sb: { types: new Set(), preset: 'economy', localidad: null },  // search builder state
   sectionsCollapsed: (() => { try { return JSON.parse(localStorage.getItem('sectionsCollapsed') || '{}'); } catch { return {}; } })()
 };
 
@@ -212,14 +241,38 @@ function filteredBusinesses() {
   const cat = document.getElementById('filter-category').value;
   const loc = document.getElementById('filter-localidad').value;
   const txt = document.getElementById('filter-text').value.toLowerCase().trim();
-  const list = Object.values(state.businesses).filter(b =>
-    (!cat || b.category === cat) &&
-    (!loc || b.localidad === loc) &&
-    (!txt || (b.name || '').toLowerCase().includes(txt))
-  );
-  if (state.activeFilter === 'approved') return list.filter(b => b.reviewStatus === 'approved');
-  if (state.activeFilter === 'notion') return list.filter(b => b.notionPageId);
+  const ratingMin = Number(document.getElementById('filter-rating')?.value || 0);
+  const reviewsMin = Number(document.getElementById('filter-reviews')?.value || 0);
+
+  let list = Object.values(state.businesses).filter(b => {
+    if (cat && b.category !== cat) return false;
+    if (loc && b.localidad !== loc) return false;
+    if (txt && !(b.name || '').toLowerCase().includes(txt)) return false;
+    if (state.hideClosed && b.business_status && b.business_status !== 'OPERATIONAL') return false;
+    if (state.withPhoneOnly && !(b.formatted_phone_number || b.international_phone_number)) return false;
+    if (state.topOnly) {
+      const r = b.rating || 0, n = b.user_ratings_total || 0;
+      if (r < 4 || n < 30) return false;
+    }
+    if (ratingMin > 0 && (b.rating || 0) < ratingMin) return false;
+    if (reviewsMin > 0 && (b.user_ratings_total || 0) < reviewsMin) return false;
+    if (state.activeCluster) {
+      const cluster = CATEGORY_CLUSTERS.find(c => c.id === state.activeCluster);
+      if (cluster && !cluster.types.includes(b.category)) return false;
+    }
+    return true;
+  });
+
+  if (state.activeFilter === 'approved') list = list.filter(b => b.reviewStatus === 'approved');
+  else if (state.activeFilter === 'notion') list = list.filter(b => b.notionPageId);
   return list;
+}
+
+/* composite score: rating × log10(reviews+1). Prioriza calidad + volumen */
+function compositeScore(b) {
+  const r = b.rating || 0;
+  const n = b.user_ratings_total || 0;
+  return r * Math.log10(n + 1);
 }
 
 function refreshCategoryFilter() {
@@ -239,6 +292,26 @@ function statusPill(b) {
   if (b.reviewStatus === 'approved' && b.notionPageId) return '<span class="pill approved">Verificado · en Notion (falta detalles)</span>';
   if (b.reviewStatus === 'approved') return '<span class="pill approved">Verificado · falta Notion</span>';
   return '<span class="pill pending">Sin verificar</span>';
+}
+
+/* ---------- phone helpers ---------- */
+function waNumber(phone) {
+  // E.164 para wa.me: solo dígitos, asume Colombia si no hay código país.
+  if (!phone) return null;
+  let digits = String(phone).replace(/\D/g, '');
+  if (!digits) return null;
+  if (digits.length === 10) digits = '57' + digits; // móvil CO sin código
+  return digits;
+}
+function waLink(phone, template) {
+  const num = waNumber(phone);
+  if (!num) return null;
+  const msg = encodeURIComponent(template || 'Hola, ¿cómo estás?');
+  return `https://wa.me/${num}?text=${msg}`;
+}
+function waTemplate(b) {
+  const name = b.name || 'allá';
+  return `Hola! Te escribo desde ReserBox. Vi ${name} y me gustaría contarte cómo otros negocios similares están usando nuestra plataforma de reservas online para reducir no-shows y llenar horarios libres. ¿Tenés 2 min para una demo rápida?`;
 }
 
 function buildListItem(b, opts = {}) {
@@ -266,6 +339,10 @@ function buildListItem(b, opts = {}) {
       <a href="${b.url}" target="_blank">Maps</a>
       ${b.website ? `<a href="${b.website}" target="_blank">Web</a>` : ''}
       <button data-focus="${b.place_id}">Ver</button>
+      ${phoneShown ? `
+        <a class="btn-wa" href="${waLink(phoneShown, waTemplate(b))}" target="_blank" rel="noopener" title="WhatsApp con template">WhatsApp</a>
+        <button class="btn-copy" data-copy-phone="${escapeHtml(phoneShown)}" title="Copiar teléfono">Copiar tel</button>
+      ` : ''}
       ${opts.quickAcceptDup ? `<button class="quick-ok" data-accept-dup="${b.place_id}" title="No es duplicado">✓</button>` : ''}
       ${opts.quickDelete ? `<button class="quick-del" data-del="${b.place_id}" title="Eliminar">✗</button>` : ''}
     </div>
@@ -336,7 +413,7 @@ function renderSection(ul, key, title, items, headerClass, opts = {}) {
 }
 
 function refreshList() {
-  const list = filteredBusinesses().sort((a, b) => (b.user_ratings_total || 0) - (a.user_ratings_total || 0));
+  const list = filteredBusinesses().sort((a, b) => compositeScore(b) - compositeScore(a));
   const hasPhone = b => !!(b.formatted_phone_number || b.international_phone_number);
   const { groups: dupGroups, reasons: dupReasons } = findDuplicateGroups(list);
   const dupIds = new Set();
@@ -405,9 +482,30 @@ function refreshList() {
   const empty = document.getElementById('list-empty');
   if (empty) empty.classList.toggle('hidden', list.length > 0);
 
-  // hero + steps always refresh alongside list
+  // hero + steps + chips always refresh alongside list
   renderHero();
   renderSteps();
+  renderClusterChips();
+}
+
+/* ---------- cluster chips row (sidebar) ---------- */
+function renderClusterChips() {
+  const el = document.getElementById('cluster-chips');
+  if (!el) return;
+  const all = Object.values(state.businesses);
+  const countByCluster = {};
+  for (const c of CATEGORY_CLUSTERS) {
+    countByCluster[c.id] = all.filter(b => c.types.includes(b.category)).length;
+  }
+  const allCount = all.length;
+  el.innerHTML = `
+    <button class="cluster-chip ${state.activeCluster === null ? 'active' : ''}" data-cluster="">Todas <span class="count">${allCount}</span></button>
+    ${CATEGORY_CLUSTERS.map(c => `
+      <button class="cluster-chip ${state.activeCluster === c.id ? 'active' : ''}" data-cluster="${c.id}">
+        ${c.label} <span class="count">${countByCluster[c.id]}</span>
+      </button>
+    `).join('')}
+  `;
 }
 
 /* ---------- step progress indicator ---------- */
@@ -513,45 +611,33 @@ function renderHero() {
 
   // 4. All done → prompt next localidad
   if (all.length > 0) {
-    const geo = state.localidadesGeo;
-    const unfinished = (geo?.features || []).filter(f => {
-      const st = state.progress[f.properties.nombre]?.status;
-      return st !== 'done';
-    });
     hero.classList.remove('accent');
     hero.innerHTML = `
       <div class="hero-head">
         <div class="hero-icon accent-bg">${ICONS.party}</div>
         <div class="hero-text">
           <div class="hero-title">Todo al día</div>
-          <div class="hero-sub">${all.length} locales procesados. Probá otra localidad para seguir prospectando.</div>
+          <div class="hero-sub">${all.length} locales procesados. Probá otra localidad o filtrá por categoría para seguir prospectando.</div>
         </div>
       </div>
       <div class="hero-actions">
-        <select id="localidad-select">
-          ${unfinished.map(f => `<option value="${f.properties.nombre}">${f.properties.nombre}</option>`).join('')}
-        </select>
-        <button class="primary" data-hero="start">${ICONS.play} Iniciar</button>
+        <button class="primary" data-hero="search-builder">${ICONS.search} Armar búsqueda</button>
       </div>`;
     return;
   }
 
   // 5. Empty state — first search
-  const geo = state.localidadesGeo;
   hero.classList.add('accent');
   hero.innerHTML = `
     <div class="hero-head">
       <div class="hero-icon">${ICONS.sparkle}</div>
       <div class="hero-text">
         <div class="hero-title">Arrancá tu primera búsqueda</div>
-        <div class="hero-sub">Elegí una localidad de Bogotá. La app escanea el grid y trae negocios tipo salones, gimnasios, clínicas, etc.</div>
+        <div class="hero-sub">Elegí una localidad, qué categorías buscar (ej. solo barberías) y ves el costo estimado antes de correr.</div>
       </div>
     </div>
     <div class="hero-actions">
-      <select id="localidad-select">
-        ${(geo?.features || []).map(f => `<option value="${f.properties.nombre}">${f.properties.nombre}</option>`).join('')}
-      </select>
-      <button class="primary" data-hero="start">${ICONS.play} Iniciar</button>
+      <button class="primary" data-hero="search-builder">${ICONS.search} Armar búsqueda</button>
     </div>`;
 }
 
@@ -582,6 +668,7 @@ async function refreshBlacklist() {
 
 function refreshAll() {
   refreshCategoryFilter();
+  renderClusterChips();
   refreshList();
   refreshBudget();
   refreshBlacklist();
@@ -730,11 +817,8 @@ function wireUI() {
     const btn = e.target.closest('[data-hero]');
     if (!btn) return;
     const action = btn.dataset.hero;
-    if (action === 'start' || action === 'search-more') {
-      const sel = document.getElementById('localidad-select');
-      const loc = sel?.value;
-      if (!loc) return;
-      startSearch(loc);
+    if (action === 'search-builder' || action === 'search-more' || action === 'start') {
+      openSearchModal();
     } else if (action === 'stop') {
       await fetch('/api/search/stop', { method: 'POST' });
       setStatus('idle', 'Detención pedida...');
@@ -744,6 +828,35 @@ function wireUI() {
       triggerEnrich();
     }
   });
+
+  // cluster chips
+  const chipsEl = document.getElementById('cluster-chips');
+  if (chipsEl) chipsEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-cluster]');
+    if (!b) return;
+    const v = b.dataset.cluster || null; // empty string → null (Todas)
+    if (!v) state.activeCluster = null;
+    else state.activeCluster = state.activeCluster === v ? null : v;
+    refreshList();
+  });
+
+  // quick toggles
+  document.getElementById('flt-top')?.addEventListener('change', e => { state.topOnly = e.target.checked; refreshList(); });
+  document.getElementById('flt-phone')?.addEventListener('change', e => { state.withPhoneOnly = e.target.checked; refreshList(); });
+  document.getElementById('flt-hideclosed')?.addEventListener('change', e => { state.hideClosed = e.target.checked; refreshList(); });
+  document.getElementById('filter-rating')?.addEventListener('change', refreshList);
+  document.getElementById('filter-reviews')?.addEventListener('change', refreshList);
+
+  // search modal
+  document.getElementById('search-close').addEventListener('click', closeSearchModal);
+  document.getElementById('sb-cancel').addEventListener('click', closeSearchModal);
+  document.getElementById('sb-start').addEventListener('click', submitSearchBuilder);
+  document.getElementById('sb-all').addEventListener('click', () => { state.sb.types = new Set(allPlaceTypes()); renderSearchBuilder(); });
+  document.getElementById('sb-none').addEventListener('click', () => { state.sb.types = new Set(); renderSearchBuilder(); });
+  document.getElementById('sb-localidad').addEventListener('change', e => { state.sb.localidad = e.target.value; debouncedPreview(); });
+  document.querySelectorAll('input[name="sb-preset"]').forEach(r => r.addEventListener('change', e => {
+    state.sb.preset = e.target.value; debouncedPreview();
+  }));
 
   // stats chip filters
   document.querySelectorAll('.stat').forEach(chip => {
@@ -807,6 +920,9 @@ function wireUI() {
     if (!document.getElementById('settings-modal').classList.contains('hidden') && e.key === 'Escape') {
       document.getElementById('settings-modal').classList.add('hidden');
     }
+    if (!document.getElementById('search-modal').classList.contains('hidden') && e.key === 'Escape') {
+      closeSearchModal();
+    }
   });
 
   // filter inputs
@@ -819,6 +935,12 @@ function wireUI() {
     const t = e.target;
     if (t.dataset.del) { e.stopPropagation(); await quickReject(t.dataset.del); return; }
     if (t.dataset.acceptGroup) { e.stopPropagation(); await acceptDuplicateGroup(t.dataset.acceptGroup.split(',')); return; }
+    if (t.dataset.copyPhone) {
+      e.stopPropagation();
+      try { await navigator.clipboard.writeText(t.dataset.copyPhone); toast('Teléfono copiado', 'ok', 1200); }
+      catch { toast('No pude copiar (permisos)', 'err', 2500); }
+      return;
+    }
     if (t.dataset.focus) {
       const b = state.businesses[t.dataset.focus];
       if (b && b.lat && b.lng) {
@@ -827,6 +949,153 @@ function wireUI() {
       }
     }
   });
+}
+
+/* ---------- search builder modal ---------- */
+function allPlaceTypes() {
+  return CATEGORY_CLUSTERS.flatMap(c => c.types);
+}
+
+function openSearchModal() {
+  // Preload localidades into modal select
+  const sel = document.getElementById('sb-localidad');
+  const geo = state.localidadesGeo;
+  if (geo && sel.children.length === 0) {
+    for (const f of geo.features) {
+      const n = f.properties.nombre;
+      const opt = document.createElement('option');
+      opt.value = n; opt.textContent = n;
+      sel.appendChild(opt);
+    }
+  }
+  // Default: first localidad without status 'done', else first
+  if (!state.sb.localidad) {
+    const unfinished = (geo?.features || []).find(f => state.progress[f.properties.nombre]?.status !== 'done');
+    state.sb.localidad = unfinished?.properties.nombre || geo?.features[0]?.properties.nombre || null;
+  }
+  sel.value = state.sb.localidad || '';
+
+  // Default: preset 'economy', no types selected (means all by default)
+  document.querySelector(`input[name="sb-preset"][value="${state.sb.preset}"]`).checked = true;
+
+  renderSearchBuilder();
+  document.getElementById('search-modal').classList.remove('hidden');
+  debouncedPreview();
+}
+
+function closeSearchModal() {
+  document.getElementById('search-modal').classList.add('hidden');
+}
+
+function renderSearchBuilder() {
+  const host = document.getElementById('sb-clusters');
+  const selected = state.sb.types;
+  host.innerHTML = CATEGORY_CLUSTERS.map(c => {
+    const allOn = c.types.every(t => selected.has(t));
+    const anyOn = c.types.some(t => selected.has(t));
+    return `
+      <div class="sb-cluster">
+        <div class="sb-cluster-head">
+          <div class="sb-cluster-label">${c.label}</div>
+          <button type="button" class="sb-cluster-all ${allOn ? 'all-on' : ''}" data-cluster-toggle="${c.id}">${allOn ? 'Quitar todos' : (anyOn ? 'Marcar todos' : 'Todos')}</button>
+        </div>
+        <div class="sb-cluster-types">
+          ${c.types.map(t => `
+            <button type="button" class="sb-type ${selected.has(t) ? 'active' : ''}" data-type="${t}">${typeLabel(t)}</button>
+          `).join('')}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // Wire per-chip clicks (rebind after innerHTML)
+  host.querySelectorAll('[data-type]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const t = btn.dataset.type;
+      if (selected.has(t)) selected.delete(t); else selected.add(t);
+      renderSearchBuilder();
+      debouncedPreview();
+    });
+  });
+  host.querySelectorAll('[data-cluster-toggle]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const cluster = CATEGORY_CLUSTERS.find(c => c.id === btn.dataset.clusterToggle);
+      const allOn = cluster.types.every(t => selected.has(t));
+      if (allOn) cluster.types.forEach(t => selected.delete(t));
+      else cluster.types.forEach(t => selected.add(t));
+      renderSearchBuilder();
+      debouncedPreview();
+    });
+  });
+}
+
+let previewTimer;
+function debouncedPreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(fetchPreview, 250);
+}
+
+async function fetchPreview() {
+  const host = document.getElementById('sb-preview');
+  const localidad = state.sb.localidad || document.getElementById('sb-localidad').value;
+  if (!localidad) { host.innerHTML = '<div class="sb-preview-loading">Elegí una localidad</div>'; return; }
+  host.innerHTML = '<div class="sb-preview-loading">Calculando...</div>';
+  const types = Array.from(state.sb.types);
+  try {
+    const r = await fetch('/api/search/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ localidad, types, mode: state.sb.preset })
+    });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || 'HTTP ' + r.status);
+    const d = await r.json();
+    const rangeTxt = d.nearbyMax > d.nearbyTypical ? `entre $${d.costTypical.toFixed(2)} y $${d.costMax.toFixed(2)}` : `$${d.costTypical.toFixed(2)}`;
+    const willOverBudget = d.currentCost + d.costMax > d.freeCredit * 0.95;
+    const typeLabels = d.selectedTypes.length === 0
+      ? `Todas las categorías (${d.categoriesCount})`
+      : d.selectedTypes.map(typeLabel).join(', ');
+    host.innerHTML = `
+      <div class="sb-preview-row big">
+        <span>Costo estimado</span>
+        <b>$${d.costTypical.toFixed(2)}</b>
+      </div>
+      <div class="sb-preview-range">Rango: ${rangeTxt} USD · peor caso ${d.nearbyMax} requests</div>
+      <div class="sb-preview-hr"></div>
+      <div class="sb-preview-row"><span class="muted">Localidad</span><b>${escapeHtml(d.localidad)}</b></div>
+      <div class="sb-preview-row"><span class="muted">Puntos del grid</span><b>${d.gridPending} pendientes${d.gridDone ? ` (${d.gridDone} ya hechos)` : ''}</b></div>
+      <div class="sb-preview-row"><span class="muted">Categorías</span><b>${escapeHtml(typeLabels)}</b></div>
+      <div class="sb-preview-row"><span class="muted">Requests estimados</span><b>${d.nearbyTypical}</b></div>
+      <div class="sb-preview-hr"></div>
+      <div class="sb-preview-row"><span class="muted">Gastado este mes</span><span>$${d.currentCost.toFixed(2)} / $${d.freeCredit}</span></div>
+      <div class="sb-preview-row"><span class="muted">Crédito disponible</span><b>$${d.remaining.toFixed(2)}</b></div>
+      ${willOverBudget ? '<div class="sb-preview-warn">Atención: este pedido puede llevarte cerca del 95% del crédito. La app se detendrá sola si pasa.</div>' : ''}
+    `;
+    document.getElementById('sb-start').disabled = d.gridPending === 0 || d.stopped;
+  } catch (e) {
+    host.innerHTML = `<div class="sb-preview-warn">${escapeHtml(e.message)}</div>`;
+  }
+}
+
+async function submitSearchBuilder() {
+  const localidad = state.sb.localidad;
+  if (!localidad) return toast('Elegí una localidad', 'warn', 2500);
+  const types = Array.from(state.sb.types);
+  // Guardar preset en settings antes de iniciar (searchLocalidad lee de settings.searchMode)
+  await fetch('/api/settings', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ searchMode: state.sb.preset })
+  });
+  const r = await fetch('/api/search/start', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ localidad, types: types.length ? types : undefined })
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) return toast(data.error || 'Error', 'err', 5000);
+  state.searching = true;
+  state.currentLocalidad = localidad;
+  setStatus('running', `Iniciando ${localidad}...`);
+  closeSearchModal();
+  renderHero();
 }
 
 async function triggerEnrich() {
