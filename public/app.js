@@ -48,6 +48,7 @@ const state = {
   mapsKey: null,
   activeFilter: 'all',           // stats chip: all | approved | notion
   activeCluster: null,            // cluster id | null
+  activeType: null,               // specific google place type | null
   topOnly: false,                 // rating>=4 && reviews>=30
   withPhoneOnly: false,
   hideClosed: true,               // hide CLOSED_TEMPORARILY por default
@@ -260,7 +261,7 @@ function filteredBusinesses() {
   const loc = document.getElementById('filter-localidad').value;
   const txt = document.getElementById('filter-text').value.toLowerCase().trim();
   const ratingMin = Number(document.getElementById('filter-rating')?.value || 0);
-  const reviewsMin = Number(document.getElementById('filter-reviews')?.value || 0);
+  const reviewsMin = state.reviewsMin || 0;
 
   let list = Object.values(state.businesses).filter(b => {
     if (cat && b.category !== cat) return false;
@@ -278,6 +279,7 @@ function filteredBusinesses() {
       const cluster = CATEGORY_CLUSTERS.find(c => c.id === state.activeCluster);
       if (cluster && !cluster.types.includes(b.category)) return false;
     }
+    if (state.activeType && b.category !== state.activeType) return false;
     return true;
   });
 
@@ -511,21 +513,41 @@ function refreshList() {
 /* ---------- cluster chips row (sidebar) ---------- */
 function renderClusterChips() {
   const el = document.getElementById('cluster-chips');
+  const typeEl = document.getElementById('type-chips');
   if (!el) return;
   const all = Object.values(state.businesses);
   const countByCluster = {};
+  const countByType = {};
   for (const c of CATEGORY_CLUSTERS) {
     countByCluster[c.id] = all.filter(b => c.types.includes(b.category)).length;
+    for (const t of c.types) countByType[t] = all.filter(b => b.category === t).length;
   }
   const allCount = all.length;
   el.innerHTML = `
-    <button class="cluster-chip ${state.activeCluster === null ? 'active' : ''}" data-cluster="">Todas <span class="count">${allCount}</span></button>
+    <button class="cluster-chip ${state.activeCluster === null && !state.activeType ? 'active' : ''}" data-cluster="">Todas <span class="count">${allCount}</span></button>
     ${CATEGORY_CLUSTERS.map(c => `
       <button class="cluster-chip ${state.activeCluster === c.id ? 'active' : ''}" data-cluster="${c.id}">
         ${c.label} <span class="count">${countByCluster[c.id]}</span>
       </button>
     `).join('')}
   `;
+
+  // Sub-chips: si hay cluster activo, mostrar types dentro. Si no hay cluster pero hay activeType, mostrar su cluster.
+  if (!typeEl) return;
+  let showTypes = null;
+  if (state.activeCluster) {
+    showTypes = CATEGORY_CLUSTERS.find(c => c.id === state.activeCluster)?.types || null;
+  } else if (state.activeType) {
+    const c = CATEGORY_CLUSTERS.find(c => c.types.includes(state.activeType));
+    showTypes = c?.types || null;
+  }
+  if (!showTypes) { typeEl.innerHTML = ''; typeEl.classList.add('hidden'); return; }
+  typeEl.classList.remove('hidden');
+  typeEl.innerHTML = showTypes.map(t => `
+    <button class="cluster-chip sub ${state.activeType === t ? 'active' : ''}" data-type="${t}">
+      ${typeLabel(t)} <span class="count">${countByType[t] || 0}</span>
+    </button>
+  `).join('');
 }
 
 /* ---------- step progress indicator ---------- */
@@ -859,9 +881,22 @@ function wireUI() {
   if (chipsEl) chipsEl.addEventListener('click', e => {
     const b = e.target.closest('[data-cluster]');
     if (!b) return;
-    const v = b.dataset.cluster || null; // empty string → null (Todas)
-    if (!v) state.activeCluster = null;
-    else state.activeCluster = state.activeCluster === v ? null : v;
+    const v = b.dataset.cluster || null;
+    if (!v) { state.activeCluster = null; state.activeType = null; }
+    else {
+      state.activeCluster = state.activeCluster === v ? null : v;
+      state.activeType = null; // al cambiar cluster se limpia type
+    }
+    refreshList();
+  });
+
+  // type chips (sub-row)
+  const typeEl = document.getElementById('type-chips');
+  if (typeEl) typeEl.addEventListener('click', e => {
+    const b = e.target.closest('[data-type]');
+    if (!b) return;
+    const t = b.dataset.type;
+    state.activeType = state.activeType === t ? null : t;
     refreshList();
   });
 
@@ -869,8 +904,32 @@ function wireUI() {
   document.getElementById('flt-top')?.addEventListener('change', e => { state.topOnly = e.target.checked; refreshList(); });
   document.getElementById('flt-phone')?.addEventListener('change', e => { state.withPhoneOnly = e.target.checked; refreshList(); });
   document.getElementById('flt-hideclosed')?.addEventListener('change', e => { state.hideClosed = e.target.checked; refreshList(); });
-  document.getElementById('filter-rating')?.addEventListener('change', refreshList);
-  document.getElementById('filter-reviews')?.addEventListener('change', refreshList);
+
+  // rating slider con label live
+  const rating = document.getElementById('filter-rating');
+  const ratingVal = document.getElementById('filter-rating-val');
+  if (rating) {
+    const paintRating = () => {
+      const v = parseFloat(rating.value);
+      ratingVal.textContent = v > 0 ? `★ ${v.toFixed(1)}+` : 'Cualquiera';
+      state.ratingMin = v;
+      // fill track visually
+      const pct = (v / 5) * 100;
+      rating.style.background = `linear-gradient(90deg, var(--primary) 0%, var(--primary) ${pct}%, var(--border) ${pct}%, var(--border) 100%)`;
+    };
+    rating.addEventListener('input', () => { paintRating(); refreshList(); });
+    paintRating();
+  }
+
+  // reviews chips (presets)
+  const revRow = document.getElementById('reviews-chips');
+  if (revRow) revRow.addEventListener('click', e => {
+    const b = e.target.closest('[data-reviews]');
+    if (!b) return;
+    state.reviewsMin = Number(b.dataset.reviews) || 0;
+    revRow.querySelectorAll('.chip').forEach(c => c.classList.toggle('active', c === b));
+    refreshList();
+  });
 
   // budget pill → open settings (donde está el botón bloquear/desbloquear)
   document.getElementById('b-state-pill')?.addEventListener('click', () => {

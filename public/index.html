@@ -96,6 +96,7 @@
 
       <!-- Quick cluster chips -->
       <div id="cluster-chips" class="cluster-chips"></div>
+      <div id="type-chips" class="cluster-chips cluster-chips-sub"></div>
 
       <!-- Quick toggles -->
       <div class="quick-toggles">
@@ -123,29 +124,33 @@
           <span class="subtle tiny" id="filter-summary"></span>
         </summary>
         <div class="filter-body">
-          <label>Categoría
+          <label>Categoría específica
             <select id="filter-category"><option value="">Todas</option></select>
           </label>
           <label>Localidad
             <select id="filter-localidad"><option value="">Todas</option></select>
           </label>
           <input id="filter-text" type="text" placeholder="Buscar por nombre..." />
-          <label>Rating mínimo
-            <select id="filter-rating">
-              <option value="0">Cualquiera</option>
-              <option value="3.5">3.5 ⭐</option>
-              <option value="4.0">4.0 ⭐</option>
-              <option value="4.5">4.5 ⭐</option>
-            </select>
-          </label>
-          <label>Reseñas mínimas
-            <select id="filter-reviews">
-              <option value="0">Cualquiera</option>
-              <option value="10">10+</option>
-              <option value="30">30+</option>
-              <option value="100">100+</option>
-            </select>
-          </label>
+          <div class="range-label">
+            <div class="range-header">
+              <span>Rating mínimo</span>
+              <b id="filter-rating-val">Cualquiera</b>
+            </div>
+            <input type="range" id="filter-rating" min="0" max="5" step="0.1" value="0" />
+            <div class="range-stars" aria-hidden="true">
+              <span>0</span><span>★ 1</span><span>★ 2</span><span>★ 3</span><span>★ 4</span><span>★ 5</span>
+            </div>
+          </div>
+          <div>
+            <div class="chip-label">Reseñas mínimas</div>
+            <div id="reviews-chips" class="chip-row">
+              <button type="button" class="chip active" data-reviews="0">Todas</button>
+              <button type="button" class="chip" data-reviews="10">10+</button>
+              <button type="button" class="chip" data-reviews="30">30+</button>
+              <button type="button" class="chip" data-reviews="100">100+</button>
+              <button type="button" class="chip" data-reviews="500">500+</button>
+            </div>
+          </div>
           <div class="tiny subtle hidden" id="filter-wrap">
             <span id="count-filtered">0</span> resultados en el filtro
           </div>

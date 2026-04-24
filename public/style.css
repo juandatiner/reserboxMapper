@@ -851,6 +851,19 @@ button svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; }
   color: white;
   border-color: var(--primary);
 }
+.cluster-chips-sub {
+  padding-left: 4px;
+  border-left: 2px solid var(--primary-soft);
+  margin-left: 4px;
+}
+.cluster-chip.sub {
+  font-size: 11px;
+  padding: 5px 10px;
+}
+.cluster-chip.sub.active {
+  background: var(--accent);
+  border-color: var(--accent);
+}
 .cluster-chip .count {
   font-size: 10px;
   opacity: .75;
@@ -1021,6 +1034,94 @@ button svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; }
   border-top: 1px solid var(--border);
 }
 .sb-actions button { min-width: 120px; padding: 11px 18px; }
+
+/* ---------- range slider (rating) ---------- */
+.range-label {
+  display: flex; flex-direction: column;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+.range-header {
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.range-header b {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 700;
+}
+input[type=range]#filter-rating {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--border);
+  outline: none;
+  padding: 0;
+  margin: 4px 0;
+}
+input[type=range]#filter-rating::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid white;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 56, 92, .35);
+  transition: transform .1s;
+}
+input[type=range]#filter-rating::-webkit-slider-thumb:hover { transform: scale(1.15); }
+input[type=range]#filter-rating::-moz-range-thumb {
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 2px solid white;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(255, 56, 92, .35);
+}
+.range-stars {
+  display: flex; justify-content: space-between;
+  font-size: 10px;
+  color: var(--text-subtle);
+  font-weight: 600;
+  padding: 0 4px;
+}
+
+/* ---------- chip row (reviews filter) ---------- */
+.chip-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  font-weight: 500;
+  margin-bottom: 6px;
+}
+.chip-row {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.chip {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s, color .15s, border-color .15s;
+  font-family: inherit;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.chip:hover { background: var(--surface-muted); color: var(--text); }
+.chip.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
 
 /* ---------- list quick-action buttons (whatsapp, copy phone) ---------- */
 #business-list .bactions .btn-wa {
