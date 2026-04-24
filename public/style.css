@@ -543,6 +543,9 @@ button svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; }
 .pill.approved { background: var(--accent-soft); color: var(--accent); }
 .pill.pending { background: var(--surface-muted); color: var(--text-muted); }
 .pill.dup { background: var(--purple-soft); color: #7c3aed; }
+.pill.lead-contacted { background: #cffafe; color: #155e75; border: 1px solid #67e8f9; }
+.pill.lead-responded { background: var(--purple-soft); color: #6b21a8; border: 1px solid #d6bcfa; }
+.pill.lead-customer  { background: #fef3c7; color: #854d0e; border: 1px solid #fbbf24; font-weight: 700; }
 
 /* list item content */
 #business-list .bname {
@@ -1150,6 +1153,24 @@ input[type=range]#filter-rating::-moz-range-thumb {
 }
 #business-list .bactions .btn-note:hover { background: var(--border); color: var(--text); }
 
+/* lead-status select — compact, inline with action buttons */
+#business-list .bactions .lead-select {
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px dashed var(--border-strong);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  max-width: 140px;
+}
+#business-list .bactions .lead-select:hover { background: var(--surface-muted); }
+#business-list li.approved-item .lead-select,
+#business-list li.done-item .lead-select,
+#business-list li.nophone-item .lead-select { border-style: solid; }
+
 #business-list .bnote {
   margin-top: 8px;
   padding: 8px 10px;
@@ -1238,6 +1259,22 @@ input[type=range]#filter-rating::-moz-range-thumb {
 }
 .rb-pin.is-done:hover {
   box-shadow: 0 0 0 2.5px var(--info), 0 4px 14px rgba(17, 24, 39, .4);
+}
+
+/* lead-status rings (pipeline comercial) */
+.rb-pin.is-contacted {
+  box-shadow: 0 0 0 2.5px #06b6d4, 0 2px 6px rgba(17, 24, 39, .28);
+}
+.rb-pin.is-responded {
+  box-shadow: 0 0 0 2.5px var(--purple), 0 2px 6px rgba(17, 24, 39, .28);
+}
+.rb-pin.is-customer {
+  box-shadow: 0 0 0 3px var(--warn), 0 0 12px rgba(245, 158, 11, .45), 0 2px 6px rgba(17, 24, 39, .28);
+  animation: rb-pulse 2s ease-in-out infinite;
+}
+@keyframes rb-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
 }
 
 /* ---------- cluster badges (Fresha-style gradient) ---------- */

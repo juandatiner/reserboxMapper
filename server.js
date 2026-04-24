@@ -928,6 +928,27 @@ app.post('/api/business/:placeId/accept-duplicate', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Lead status pipeline: pending → approved → contacted → responded → customer.
+// Opcional: rejected (más fuerte que delete, deja evidencia).
+const LEAD_STATES = new Set(['pending', 'contacted', 'responded', 'customer', 'rejected']);
+app.post('/api/business/:placeId/lead-status', async (req, res) => {
+  const b = businesses[req.params.placeId];
+  if (!b) return res.status(404).json({ error: 'No existe' });
+  const { status, touchContact } = req.body || {};
+  if (status && !LEAD_STATES.has(status)) return res.status(400).json({ error: 'status inválido' });
+  if (status === 'pending' || status === null || status === '') {
+    delete b.leadStatus;
+  } else if (status) {
+    b.leadStatus = status;
+  }
+  if (touchContact || status === 'contacted' || status === 'responded') {
+    b.lastContactAt = new Date().toISOString();
+  }
+  await saveBusinesses();
+  broadcast({ type: 'business', business: b });
+  res.json({ ok: true, leadStatus: b.leadStatus || null, lastContactAt: b.lastContactAt || null });
+});
+
 // Persist private note per business (no se sincroniza a Notion).
 app.post('/api/business/:placeId/note', async (req, res) => {
   const b = businesses[req.params.placeId];

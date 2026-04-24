@@ -18,7 +18,7 @@ const ICONS = {
 /* ---------- category clusters ---------- */
 const CATEGORY_CLUSTERS = [
   { id: 'beauty',  label: 'Belleza',    types: ['hair_salon','beauty_salon','barber','spa','nail_salon'] },
-  { id: 'health',  label: 'Salud',      types: ['doctor','clinic','dentist','physiotherapist'] },
+  { id: 'health',  label: 'Salud',      types: ['doctor','clinic','dentist','physiotherapist','hospital','drugstore'] },
   { id: 'fitness', label: 'Fitness',    types: ['gym'] },
   { id: 'pro',     label: 'Servicios',  types: ['lawyer','photographer'] },
   { id: 'pets',    label: 'Mascotas',   types: ['veterinary_care'] },
@@ -26,13 +26,20 @@ const CATEGORY_CLUSTERS = [
 ];
 const TYPE_LABELS = {
   hair_salon: 'Peluquería', beauty_salon: 'Salón belleza', barber: 'Barbería', spa: 'Spa', nail_salon: 'Uñas',
-  doctor: 'Médico', clinic: 'Clínica', dentist: 'Odontólogo', physiotherapist: 'Fisio',
+  doctor: 'Médico', clinic: 'Clínica', dentist: 'Odontólogo', physiotherapist: 'Fisio', hospital: 'Hospital', drugstore: 'Droguería',
   gym: 'Gimnasio',
   lawyer: 'Abogado', photographer: 'Fotógrafo',
   veterinary_care: 'Veterinaria', tattoo_parlor: 'Tatuajes'
 };
 function clusterOfType(type) {
   for (const c of CATEGORY_CLUSTERS) if (c.types.includes(type)) return c.id;
+  // Heurística para categorías que vienen de keyword searches (español/inglés)
+  const t = (type || '').toLowerCase();
+  if (/médic|medic|salud|cl[íi]nic|dentist|odontó|fisio|psic[óo]|terapeu|therap|nutri|acupunt|est[ée]tic|ortoped|dermató|cardi|pediatr|gine|oftal|neuro|quiro|cirug|urol|endocrin|gastro|implant|endodon/.test(t)) return 'health';
+  if (/pilates|yoga|fitness|gim|entrenad|gym|trainer|crossfit/.test(t)) return 'fitness';
+  if (/pelu|barb|spa|belleza|beauty|manicur|u[ñn]as|nail|masaj|massag|microblading|depila|laser|bot[óo]x|rellen/.test(t)) return 'beauty';
+  if (/foto|photo|abog|lawyer|conta|asesor/.test(t)) return 'pro';
+  if (/veterin|mascot|pet/.test(t)) return 'pets';
   return 'other';
 }
 function typeLabel(t) { return TYPE_LABELS[t] || t; }
@@ -230,6 +237,9 @@ function pinIcon(b) {
   if (b.reviewStatus === 'approved') classes.push('is-approved');
   if (b.notionPageId) classes.push('is-notion');
   if (b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId && (b.formatted_phone_number || b.international_phone_number)) classes.push('is-done');
+  if (b.leadStatus === 'contacted') classes.push('is-contacted');
+  if (b.leadStatus === 'responded') classes.push('is-responded');
+  if (b.leadStatus === 'customer') classes.push('is-customer');
   return L.divIcon({
     className: 'rb-pin-wrap',
     html: `<div class="${classes.join(' ')}" style="--pin-color:${color}"><span class="rb-pin-dot"></span></div>`,
@@ -324,6 +334,12 @@ function refreshCategoryFilter() {
 
 function statusPill(b) {
   const hasPhone = !!(b.formatted_phone_number || b.international_phone_number);
+  // leadStatus wins si está set
+  if (b.leadStatus && LEAD_LABELS[b.leadStatus]) {
+    const L = LEAD_LABELS[b.leadStatus];
+    const rel = b.lastContactAt ? ` · hace ${relTime(b.lastContactAt)}` : '';
+    return `<span class="pill ${L.cls}">${L.emoji} ${L.label}${rel}</span>`;
+  }
   if (b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId && hasPhone) return '<span class="pill done">En Notion con teléfono</span>';
   if (b.reviewStatus === 'approved' && b.detailsFetched && b.notionPageId) return '<span class="pill nophone">En Notion sin teléfono</span>';
   if (b.reviewStatus === 'approved' && b.detailsFetched && !hasPhone) return '<span class="pill nophone">Sin teléfono · no enviado</span>';
@@ -332,24 +348,52 @@ function statusPill(b) {
   return '<span class="pill pending">Sin verificar</span>';
 }
 
-/* ---------- phone helpers ---------- */
+/* ---------- phone + WhatsApp templates por cluster ---------- */
 function waNumber(phone) {
-  // E.164 para wa.me: solo dígitos, asume Colombia si no hay código país.
   if (!phone) return null;
   let digits = String(phone).replace(/\D/g, '');
   if (!digits) return null;
-  if (digits.length === 10) digits = '57' + digits; // móvil CO sin código
+  if (digits.length === 10) digits = '57' + digits;
   return digits;
 }
 function waLink(phone, template) {
   const num = waNumber(phone);
   if (!num) return null;
-  const msg = encodeURIComponent(template || 'Hola, ¿cómo estás?');
+  const msg = encodeURIComponent(template || 'Hola');
   return `https://wa.me/${num}?text=${msg}`;
 }
+const WA_TEMPLATES = {
+  beauty:  b => `Hola! Soy de ReserBox. Vi ${b.name} y quería contarte cómo peluquerías y spas de Bogotá están reduciendo no-shows y llenando horarios muertos con nuestro sistema de agendamiento online. ¿Tenés 2 min para ver una demo rápida?`,
+  health:  b => `Hola! Te escribo de ReserBox. ${b.name} me parece el tipo de consultorio donde nuestro sistema de citas online puede ahorrarte muchas horas de llamadas y confirmaciones. ¿Podemos coordinar 10 min esta semana para mostrártelo?`,
+  fitness: b => `Hola! Soy de ReserBox. Trabajamos con gimnasios y estudios de entrenamiento para manejar reservas de clases, pases y seguimiento de clientes desde un solo lugar. ¿Te muestro cómo funciona en ${b.name}?`,
+  pro:     b => `Hola! Soy de ReserBox. Vi ${b.name} y me imagino que recibís muchas solicitudes por WhatsApp. Nuestro sistema automatiza agenda, confirmaciones y recordatorios. ¿Tenés 5 min esta semana?`,
+  pets:    b => `Hola! Te escribo de ReserBox. Ayudamos a veterinarias a organizar turnos, historias clínicas básicas y recordatorios automáticos a los dueños de las mascotas. ¿Te interesa ver cómo podría funcionar en ${b.name}?`,
+  other:   b => `Hola! Soy de ReserBox. Vi ${b.name} y creo que nuestro sistema de reservas online puede ahorrarte tiempo. ¿Tenés un rato para una demo rápida?`
+};
 function waTemplate(b) {
-  const name = b.name || 'allá';
-  return `Hola! Te escribo desde ReserBox. Vi ${name} y me gustaría contarte cómo otros negocios similares están usando nuestra plataforma de reservas online para reducir no-shows y llenar horarios libres. ¿Tenés 2 min para una demo rápida?`;
+  const clusterId = clusterOfType(b.category);
+  const fn = WA_TEMPLATES[clusterId] || WA_TEMPLATES.other;
+  return fn(b);
+}
+
+/* ---------- lead status + time helpers ---------- */
+const LEAD_LABELS = {
+  contacted: { label: 'Contactado', emoji: '📞', cls: 'lead-contacted' },
+  responded: { label: 'Respondió', emoji: '💬', cls: 'lead-responded' },
+  customer:  { label: 'Cliente',   emoji: '⭐', cls: 'lead-customer' }
+};
+function relTime(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'recién';
+  if (mins < 60) return `${mins} min`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs} h`;
+  const days = Math.floor(hrs / 24);
+  if (days < 30) return `${days} d`;
+  const months = Math.floor(days / 30);
+  return `${months} mes${months > 1 ? 'es' : ''}`;
 }
 
 function buildListItem(b, opts = {}) {
@@ -378,10 +422,17 @@ function buildListItem(b, opts = {}) {
       ${b.website ? `<a href="${b.website}" target="_blank">Web</a>` : ''}
       <button data-focus="${b.place_id}">Ver</button>
       ${phoneShown ? `
-        <a class="btn-wa" href="${waLink(phoneShown, waTemplate(b))}" target="_blank" rel="noopener" title="WhatsApp con template">WhatsApp</a>
+        <a class="btn-wa" href="${waLink(phoneShown, waTemplate(b))}" target="_blank" rel="noopener" data-wa-click="${b.place_id}" title="WhatsApp con template de tu cluster">WhatsApp</a>
         <button class="btn-copy" data-copy-phone="${escapeHtml(phoneShown)}" title="Copiar teléfono">Copiar tel</button>
       ` : ''}
       <button class="btn-note ${b.note ? 'has-note' : ''}" data-note="${b.place_id}" title="${b.note ? 'Editar nota' : 'Agregar nota'}">${b.note ? 'Nota ✎' : 'Nota +'}</button>
+      <select class="lead-select" data-lead="${b.place_id}" title="Cambiar estado del lead">
+        <option value="">· Estado ·</option>
+        <option value="contacted" ${b.leadStatus === 'contacted' ? 'selected' : ''}>📞 Contactado</option>
+        <option value="responded" ${b.leadStatus === 'responded' ? 'selected' : ''}>💬 Respondió</option>
+        <option value="customer" ${b.leadStatus === 'customer' ? 'selected' : ''}>⭐ Cliente</option>
+        <option value="pending">↺ Resetear</option>
+      </select>
       ${opts.quickAcceptDup ? `<button class="quick-ok" data-accept-dup="${b.place_id}" title="No es duplicado">✓</button>` : ''}
       ${opts.quickDelete ? `<button class="quick-del" data-del="${b.place_id}" title="Eliminar">✗</button>` : ''}
     </div>
@@ -1055,6 +1106,28 @@ function wireUI() {
     document.getElementById(id).addEventListener('input', refreshList);
   }
 
+  // lead-status select change (delegated)
+  document.getElementById('business-list').addEventListener('change', async e => {
+    const sel = e.target.closest('.lead-select');
+    if (!sel) return;
+    const id = sel.dataset.lead;
+    const status = sel.value || '';
+    const r = await fetch(`/api/business/${id}/lead-status`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: status || null })
+    });
+    if (!r.ok) { toast('Error guardando estado', 'err', 3000); return; }
+    const d = await r.json();
+    if (state.businesses[id]) {
+      state.businesses[id].leadStatus = d.leadStatus || undefined;
+      state.businesses[id].lastContactAt = d.lastContactAt || state.businesses[id].lastContactAt;
+      updateMarkerForBusiness(state.businesses[id]);
+    }
+    refreshList();
+    const label = status && LEAD_LABELS[status] ? LEAD_LABELS[status].label : 'Reset';
+    toast(`Estado: ${label}`, 'ok', 1500);
+  });
+
   // list delegated actions
   document.getElementById('business-list').addEventListener('click', async e => {
     const t = e.target;
@@ -1069,6 +1142,26 @@ function wireUI() {
     if (t.dataset.note) {
       e.stopPropagation();
       openNoteModal(t.dataset.note);
+      return;
+    }
+    if (t.dataset.waClick) {
+      // No preventDefault: dejar que abra wa.me. Solo marcar contactado si no hay estado aún.
+      const id = t.dataset.waClick;
+      const b = state.businesses[id];
+      if (b && !b.leadStatus) {
+        // disparamos POST async, no bloquea click nativo
+        fetch(`/api/business/${id}/lead-status`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status: 'contacted' })
+        }).then(r => r.ok ? r.json() : null).then(d => {
+          if (d && state.businesses[id]) {
+            state.businesses[id].leadStatus = 'contacted';
+            state.businesses[id].lastContactAt = d.lastContactAt;
+            updateMarkerForBusiness(state.businesses[id]);
+            refreshList();
+          }
+        });
+      }
       return;
     }
     if (t.dataset.focus) {
