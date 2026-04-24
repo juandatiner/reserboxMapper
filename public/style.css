@@ -174,6 +174,11 @@ h3 { font-size: 15px; font-weight: 700; margin: 0; letter-spacing: -.005em; }
 }
 .budget-pill.stopped .budget-icon { background: var(--danger); }
 .budget-pill.stopped b { color: var(--danger); }
+.budget-pill.warn .budget-icon { background: var(--warn); }
+.budget-pill.warn b { color: #92400e; }
+button.budget-pill { cursor: pointer; transition: border-color .15s, background .15s; }
+button.budget-pill:hover { border-color: var(--border-strong); background: var(--surface-muted); }
+.budget-pct { color: var(--text-muted); font-size: 11px; font-weight: 500; }
 
 .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-subtle); flex-shrink: 0; }
 .dot.running { background: var(--warn); animation: pulse 1s infinite; }
@@ -1030,6 +1035,73 @@ button svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; }
   border: 1px solid #93c5fd;
 }
 #business-list .bactions .btn-copy:hover { background: var(--info); color: white; border-color: var(--info); }
+
+#business-list .bactions .btn-note {
+  background: var(--surface-muted);
+  color: var(--text-muted);
+  border: 1px dashed var(--border-strong);
+}
+#business-list .bactions .btn-note.has-note {
+  background: #fef3c7;
+  color: #92400e;
+  border-color: #f3cd6d;
+  border-style: solid;
+}
+#business-list .bactions .btn-note:hover { background: var(--border); color: var(--text); }
+
+#business-list .bnote {
+  margin-top: 8px;
+  padding: 8px 10px;
+  background: var(--warn-soft);
+  border-left: 3px solid var(--warn);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #78350f;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  word-break: break-word;
+}
+
+/* note modal textarea */
+#note-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius-sm);
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 1.5;
+  resize: vertical;
+  margin-bottom: 10px;
+  transition: border-color .15s, box-shadow .15s;
+}
+#note-textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px var(--primary-soft);
+}
+.note-meta { margin-bottom: 14px; }
+
+/* leaflet markercluster overrides — fresha look */
+.marker-cluster {
+  background: rgba(255, 56, 92, .2);
+  border: 2px solid rgba(255, 56, 92, .5);
+}
+.marker-cluster div {
+  background: var(--primary);
+  color: white;
+  font-weight: 700;
+  font-family: var(--font);
+}
+.marker-cluster-small { background: rgba(16, 185, 129, .2); border-color: rgba(16, 185, 129, .5); }
+.marker-cluster-small div { background: var(--success); }
+.marker-cluster-medium { background: rgba(245, 158, 11, .2); border-color: rgba(245, 158, 11, .5); }
+.marker-cluster-medium div { background: var(--warn); }
+.marker-cluster-large { background: rgba(220, 38, 38, .2); border-color: rgba(220, 38, 38, .5); }
+.marker-cluster-large div { background: var(--danger); }
 
 /* ---------- responsive breakpoints ---------- */
 

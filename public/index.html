@@ -8,6 +8,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
@@ -57,10 +59,11 @@
             <span id="status-dot" class="dot idle"></span>
             <span id="status-text">Inactivo</span>
           </span>
-          <span class="budget-pill" id="b-state-pill" title="Estado Google Places API">
+          <button class="budget-pill" id="b-state-pill" title="Gasto del mes · click para detalles">
             <span class="budget-icon"></span>
             <b id="b-state">—</b>
-          </span>
+            <span class="budget-pct" id="b-pct"></span>
+          </button>
         </div>
       </header>
 
@@ -191,6 +194,20 @@
       </div>
     </div>
 
+    <!-- Note modal -->
+    <div id="note-modal" class="modal hidden">
+      <div class="confirm-card">
+        <div class="confirm-title" id="note-title">Nota</div>
+        <textarea id="note-textarea" placeholder="Ej: Llamé jueves, interesados. Volver a contactar martes con demo..." rows="5"></textarea>
+        <div class="note-meta tiny subtle" id="note-meta"></div>
+        <div class="confirm-actions">
+          <button id="note-delete" class="ghost" style="margin-right:auto;color:var(--danger)">Borrar</button>
+          <button id="note-cancel" class="ghost">Cancelar</button>
+          <button id="note-save" class="primary">Guardar</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Search builder modal -->
     <div id="search-modal" class="modal hidden">
       <div class="search-card">
@@ -287,6 +304,7 @@
   </div>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

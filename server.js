@@ -928,6 +928,24 @@ app.post('/api/business/:placeId/accept-duplicate', async (req, res) => {
   res.json({ ok: true });
 });
 
+// Persist private note per business (no se sincroniza a Notion).
+app.post('/api/business/:placeId/note', async (req, res) => {
+  const b = businesses[req.params.placeId];
+  if (!b) return res.status(404).json({ error: 'No existe' });
+  const { note } = req.body || {};
+  if (typeof note !== 'string' && note !== null) return res.status(400).json({ error: 'note inválido' });
+  if (!note) {
+    delete b.note;
+    delete b.noteUpdatedAt;
+  } else {
+    b.note = note.slice(0, 2000);
+    b.noteUpdatedAt = new Date().toISOString();
+  }
+  await saveBusinesses();
+  broadcast({ type: 'business', business: b });
+  res.json({ ok: true, note: b.note || null, updatedAt: b.noteUpdatedAt || null });
+});
+
 app.post('/api/business/accept-duplicates-bulk', async (req, res) => {
   const { placeIds } = req.body || {};
   if (!Array.isArray(placeIds)) return res.status(400).json({ error: 'placeIds array requerido' });

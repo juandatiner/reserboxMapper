@@ -128,6 +128,16 @@ async function initApp() {
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap', maxZoom: 19
   }).addTo(map);
+
+  // Cluster group para agrupar pines cuando hay miles. Explota al hacer zoom.
+  state.cluster = L.markerClusterGroup({
+    maxClusterRadius: 50,
+    chunkedLoading: true,
+    spiderfyOnMaxZoom: true,
+    showCoverageOnHover: false
+  });
+  map.addLayer(state.cluster);
+
   addLegend();
 
   // inject gear icon once
@@ -218,9 +228,17 @@ function addMarker(b) {
   const m = L.circleMarker([b.lat, b.lng], {
     radius: 6, color: colorFor(b.category), fillColor: colorFor(b.category),
     fillOpacity: 0.85, weight: 1
-  }).addTo(map);
+  });
   m.on('click', () => openSingleReview(b.place_id));
   state.markers[b.place_id] = m;
+  if (state.cluster) state.cluster.addLayer(m); else m.addTo(map);
+}
+
+function removeMarker(placeId) {
+  const m = state.markers[placeId];
+  if (!m) return;
+  if (state.cluster) state.cluster.removeLayer(m); else map.removeLayer(m);
+  delete state.markers[placeId];
 }
 
 function openSingleReview(placeId) {
@@ -343,9 +361,11 @@ function buildListItem(b, opts = {}) {
         <a class="btn-wa" href="${waLink(phoneShown, waTemplate(b))}" target="_blank" rel="noopener" title="WhatsApp con template">WhatsApp</a>
         <button class="btn-copy" data-copy-phone="${escapeHtml(phoneShown)}" title="Copiar teléfono">Copiar tel</button>
       ` : ''}
+      <button class="btn-note ${b.note ? 'has-note' : ''}" data-note="${b.place_id}" title="${b.note ? 'Editar nota' : 'Agregar nota'}">${b.note ? 'Nota ✎' : 'Nota +'}</button>
       ${opts.quickAcceptDup ? `<button class="quick-ok" data-accept-dup="${b.place_id}" title="No es duplicado">✓</button>` : ''}
       ${opts.quickDelete ? `<button class="quick-del" data-del="${b.place_id}" title="Eliminar">✗</button>` : ''}
     </div>
+    ${b.note ? `<div class="bnote">${escapeHtml(b.note)}</div>` : ''}
   `;
   return li;
 }
@@ -646,9 +666,17 @@ function refreshBudget() {
   const b = state.budget;
   const pill = document.getElementById('b-state-pill');
   const stateEl = document.getElementById('b-state');
+  const pctEl = document.getElementById('b-pct');
   const toggleBtn = document.getElementById('btn-toggle-budget');
-  if (stateEl) stateEl.textContent = b.stopped ? 'Bloqueada' : 'Activa';
-  if (pill) pill.classList.toggle('stopped', !!b.stopped);
+  const cost = Number(b.cost || 0);
+  const free = Number(b.freeCredit || 200);
+  const pct = free > 0 ? Math.round((cost / free) * 100) : 0;
+  if (stateEl) stateEl.textContent = b.stopped ? `BLOQUEADA · $${cost.toFixed(2)}` : `$${cost.toFixed(2)} / $${free}`;
+  if (pctEl) pctEl.textContent = b.stopped ? '' : ` · ${pct}%`;
+  if (pill) {
+    pill.classList.toggle('stopped', !!b.stopped);
+    pill.classList.toggle('warn', !b.stopped && pct >= 80);
+  }
   if (toggleBtn) toggleBtn.textContent = b.stopped ? 'Desbloquear' : 'Bloquear';
 }
 
@@ -750,10 +778,7 @@ function connectSSE() {
         toast('Notion actualizado', 'ok', 2000);
         break;
       case 'business_removed':
-        if (state.markers[d.placeId]) {
-          map.removeLayer(state.markers[d.placeId]);
-          delete state.markers[d.placeId];
-        }
+        removeMarker(d.placeId);
         delete state.businesses[d.placeId];
         refreshList();
         refreshBlacklist();
@@ -847,6 +872,24 @@ function wireUI() {
   document.getElementById('filter-rating')?.addEventListener('change', refreshList);
   document.getElementById('filter-reviews')?.addEventListener('change', refreshList);
 
+  // budget pill → open settings (donde está el botón bloquear/desbloquear)
+  document.getElementById('b-state-pill')?.addEventListener('click', () => {
+    document.getElementById('settings-modal').classList.remove('hidden');
+  });
+
+  // note modal wiring
+  document.getElementById('note-cancel').addEventListener('click', closeNoteModal);
+  document.getElementById('note-save').addEventListener('click', () => {
+    saveNote(document.getElementById('note-textarea').value.trim());
+  });
+  document.getElementById('note-delete').addEventListener('click', async () => {
+    if (!(await confirmDialog('¿Borrar la nota?', { title: 'Borrar nota', okText: 'Borrar', danger: true }))) return;
+    saveNote('');
+  });
+  document.getElementById('note-textarea').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) saveNote(e.target.value.trim());
+  });
+
   // search modal
   document.getElementById('search-close').addEventListener('click', closeSearchModal);
   document.getElementById('sb-cancel').addEventListener('click', closeSearchModal);
@@ -923,6 +966,9 @@ function wireUI() {
     if (!document.getElementById('search-modal').classList.contains('hidden') && e.key === 'Escape') {
       closeSearchModal();
     }
+    if (!document.getElementById('note-modal').classList.contains('hidden') && e.key === 'Escape') {
+      closeNoteModal();
+    }
   });
 
   // filter inputs
@@ -941,6 +987,11 @@ function wireUI() {
       catch { toast('No pude copiar (permisos)', 'err', 2500); }
       return;
     }
+    if (t.dataset.note) {
+      e.stopPropagation();
+      openNoteModal(t.dataset.note);
+      return;
+    }
     if (t.dataset.focus) {
       const b = state.businesses[t.dataset.focus];
       if (b && b.lat && b.lng) {
@@ -949,6 +1000,44 @@ function wireUI() {
       }
     }
   });
+}
+
+/* ---------- note modal ---------- */
+let noteEditingId = null;
+function openNoteModal(placeId) {
+  const b = state.businesses[placeId];
+  if (!b) return;
+  noteEditingId = placeId;
+  document.getElementById('note-title').textContent = `Nota · ${b.name}`;
+  document.getElementById('note-textarea').value = b.note || '';
+  document.getElementById('note-meta').textContent = b.noteUpdatedAt
+    ? `Última edición: ${new Date(b.noteUpdatedAt).toLocaleString('es-CO')}`
+    : 'Nueva nota — solo visible en esta app, no se sincroniza a Notion';
+  document.getElementById('note-delete').style.display = b.note ? '' : 'none';
+  document.getElementById('note-modal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('note-textarea').focus(), 50);
+}
+function closeNoteModal() {
+  noteEditingId = null;
+  document.getElementById('note-modal').classList.add('hidden');
+}
+async function saveNote(noteValue) {
+  if (!noteEditingId) return;
+  const id = noteEditingId;
+  const r = await fetch(`/api/business/${id}/note`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note: noteValue || null })
+  });
+  if (!r.ok) { toast('Error guardando nota', 'err', 3000); return; }
+  const d = await r.json();
+  if (state.businesses[id]) {
+    if (d.note) { state.businesses[id].note = d.note; state.businesses[id].noteUpdatedAt = d.updatedAt; }
+    else { delete state.businesses[id].note; delete state.businesses[id].noteUpdatedAt; }
+  }
+  closeNoteModal();
+  refreshList();
+  toast(noteValue ? 'Nota guardada' : 'Nota borrada', 'ok', 1500);
 }
 
 /* ---------- search builder modal ---------- */
@@ -1135,7 +1224,7 @@ window.approveOne = async placeId => {
 
 async function quickReject(placeId) {
   await fetch(`/api/business/${placeId}`, { method: 'DELETE' });
-  if (state.markers[placeId]) { map.removeLayer(state.markers[placeId]); delete state.markers[placeId]; }
+  removeMarker(placeId);
   delete state.businesses[placeId];
   refreshList();
   refreshBlacklist();
@@ -1161,7 +1250,7 @@ async function acceptDuplicateGroup(placeIds) {
 window.rejectOne = async placeId => {
   if (!(await confirmDialog('Borra del cache, archiva la página de Notion si existe, y agrega el place_id a la blacklist.', { title: 'Eliminar local', okText: 'Eliminar', danger: true }))) return;
   await fetch(`/api/business/${placeId}`, { method: 'DELETE' });
-  if (state.markers[placeId]) { map.removeLayer(state.markers[placeId]); delete state.markers[placeId]; }
+  removeMarker(placeId);
   delete state.businesses[placeId];
   refreshList();
   toast('Eliminado', 'ok', 2000);
