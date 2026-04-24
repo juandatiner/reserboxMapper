@@ -133,6 +133,7 @@ h3 { font-size: 15px; font-weight: 700; margin: 0; letter-spacing: -.005em; }
   padding: 18px;
   display: flex; flex-direction: column; gap: 14px;
 }
+#sidebar > * { flex-shrink: 0; }  /* evitar que flex column aplaste cajas cuando overflow-y activo */
 #sidebar::-webkit-scrollbar { width: 8px; }
 #sidebar::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 4px; }
 #sidebar::-webkit-scrollbar-track { background: transparent; }
@@ -842,8 +843,9 @@ button svg { width: 16px; height: 16px; stroke-width: 2; flex-shrink: 0; }
   .review-embed { min-height: 360px; }
 }
 
-/* Mobile / tablet portrait (<768px): stacked layout */
-@media (max-width: 767px) {
+/* Mobile / tablet portrait (<900px): stacked layout */
+@media (max-width: 899px) {
+  .legend { display: none; }  /* ocupa demasiado en map panel chico */
   #app {
     grid-template-columns: 1fr;
     grid-template-rows: 50vh 1fr;
