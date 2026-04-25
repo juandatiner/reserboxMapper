@@ -313,6 +313,7 @@ function filteredBusinesses() {
 
   if (state.activeFilter === 'approved') list = list.filter(b => b.reviewStatus === 'approved');
   else if (state.activeFilter === 'notion') list = list.filter(b => b.notionPageId);
+  else if (state.activeFilter === 'contacted') list = list.filter(b => b.leadStatus && ['contacted', 'responded', 'customer'].includes(b.leadStatus));
   return list;
 }
 
@@ -552,6 +553,7 @@ function refreshList() {
   const all = Object.values(state.businesses);
   document.getElementById('count-total').textContent = all.length;
   document.getElementById('count-approved').textContent = all.filter(b => b.reviewStatus === 'approved').length;
+  document.getElementById('count-contacted').textContent = all.filter(b => b.leadStatus && ['contacted', 'responded', 'customer'].includes(b.leadStatus)).length;
   document.getElementById('count-notion').textContent = all.filter(b => b.notionPageId).length;
 
   // filter summary
@@ -664,16 +666,29 @@ function renderHero() {
     const loc = state.currentLocalidad || '';
     const prog = state.progress[loc];
     const done = prog ? Object.keys(prog.searchedPoints || {}).length : 0;
-    const total = state.currentGridTotal || '?';
+    const total = state.currentGridTotal || 0;
+    const remaining = Math.max(0, total - done);
+    // ETA calculado en client desde intervalos entre events
+    let eta = '';
+    if (state.searchStartedAt && done > 0 && remaining > 0) {
+      const elapsed = (Date.now() - state.searchStartedAt) / 1000;
+      const avgPerPoint = elapsed / done;
+      const secRem = Math.round(avgPerPoint * remaining);
+      if (secRem < 60) eta = ` · ~${secRem}s restantes`;
+      else if (secRem < 3600) eta = ` · ~${Math.round(secRem / 60)} min restantes`;
+      else eta = ` · ~${(secRem / 3600).toFixed(1)} h restantes`;
+    }
+    const pct = total > 0 ? Math.round((done / total) * 100) : 0;
     hero.classList.add('accent');
     hero.innerHTML = `
       <div class="hero-head">
         <div class="hero-icon info-bg">${ICONS.search}</div>
         <div class="hero-text">
           <div class="hero-title">Buscando en ${escapeHtml(loc) || 'localidad'}...</div>
-          <div class="hero-sub">${done} / ${total} puntos procesados</div>
+          <div class="hero-sub">${done} / ${total || '?'} puntos (${pct}%)${eta}</div>
         </div>
       </div>
+      <div class="hero-progress-bar"><div class="hero-progress-fill" style="width:${pct}%"></div></div>
       <div class="hero-actions">
         <button class="ghost" data-hero="stop">${ICONS.stop} Parar búsqueda</button>
       </div>`;
@@ -827,6 +842,7 @@ function connectSSE() {
       case 'search_start':
         state.searching = true;
         state.currentLocalidad = d.localidad;
+        state.searchStartedAt = Date.now();
         state.progress[d.localidad] = state.progress[d.localidad] || { status: 'in_progress', searchedPoints: {} };
         state.progress[d.localidad].status = 'in_progress';
         refreshPolygonStyles();
@@ -846,6 +862,7 @@ function connectSSE() {
         state.searching = false;
         state.currentLocalidad = null;
         state.currentGridTotal = null;
+        state.searchStartedAt = null;
         state.progress[d.localidad] = state.progress[d.localidad] || {};
         state.progress[d.localidad].status = d.status;
         refreshPolygonStyles();
@@ -1067,6 +1084,10 @@ function wireUI() {
     }
   });
 
+  document.getElementById('btn-export-csv').addEventListener('click', () => {
+    exportCSV();
+  });
+
   document.getElementById('btn-cleanup').addEventListener('click', async () => {
     const btn = document.getElementById('btn-cleanup');
     if (btn.disabled) return;
@@ -1172,6 +1193,47 @@ function wireUI() {
       }
     }
   });
+}
+
+/* ---------- CSV export ---------- */
+function csvEscape(v) {
+  if (v === null || v === undefined) return '';
+  const s = String(v);
+  if (/[",\n\r]/.test(s)) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+function exportCSV() {
+  const list = filteredBusinesses();
+  if (!list.length) { toast('No hay locales para exportar', 'warn', 2500); return; }
+  const headers = ['Nombre','Categoría','Localidad','Rating','Reseñas','Teléfono','Website','Dirección','Estado_Lead','Último_Contacto','Aprobado','En_Notion','Nota','Maps_URL'];
+  const rows = list.map(b => [
+    b.name,
+    b.category,
+    b.localidad || '',
+    b.rating ?? '',
+    b.user_ratings_total ?? 0,
+    b.formatted_phone_number || b.international_phone_number || '',
+    b.website || '',
+    b.formatted_address || '',
+    b.leadStatus || (b.reviewStatus === 'approved' ? 'approved' : 'pending'),
+    b.lastContactAt || '',
+    b.reviewStatus === 'approved' ? 'sí' : 'no',
+    b.notionPageId ? 'sí' : 'no',
+    (b.note || '').replace(/\n/g, ' '),
+    b.url || ''
+  ].map(csvEscape).join(','));
+  const csv = '﻿' + [headers.join(','), ...rows].join('\r\n'); // BOM para Excel UTF-8
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, '-');
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `reserbox-leads-${stamp}.csv`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  toast(`CSV con ${list.length} locales descargado`, 'ok', 3000);
 }
 
 /* ---------- note modal ---------- */

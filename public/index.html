@@ -88,6 +88,10 @@
           <b id="count-approved">0</b>
           <span>Aprobados</span>
         </button>
+        <button class="stat" data-filter="contacted" id="stat-contacted">
+          <b id="count-contacted">0</b>
+          <span>Contactados</span>
+        </button>
         <button class="stat" data-filter="notion" id="stat-notion">
           <b id="count-notion">0</b>
           <span>En Notion</span>
@@ -296,6 +300,13 @@
               <div id="cleanup-live" class="tiny subtle hidden"></div>
             </div>
             <button id="btn-cleanup" class="ghost">Limpiar</button>
+          </div>
+          <div class="adv-row">
+            <div>
+              <div class="adv-title">Exportar a CSV</div>
+              <div class="adv-sub">Descarga los locales filtrados actuales. Abrís en Excel/Google Sheets. No afecta Notion.</div>
+            </div>
+            <button id="btn-export-csv" class="ghost">Descargar CSV</button>
           </div>
           <div class="adv-row">
             <div>
